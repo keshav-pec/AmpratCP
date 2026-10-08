@@ -170,6 +170,15 @@ export function createStore({ storage, onSave = () => {} } = {}) {
       onSave(result);
       return result;
     },
+    // Re-reads storage after another tab saved, so this tab never writes over newer data.
+    // Unreadable data is ignored and the current state kept. Returns true if state changed.
+    reload() {
+      const fresh = load(storage);
+      if (fresh.status !== 'ok' && fresh.status !== 'empty') return false;
+      if (JSON.stringify(fresh.state) === JSON.stringify(state)) return false;
+      state = fresh.state;
+      return true;
+    },
   };
 }
 

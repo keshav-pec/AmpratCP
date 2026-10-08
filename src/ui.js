@@ -105,7 +105,16 @@ export function showNotice(id, message) {
     notice = h('div', { class: 'notice', id, role: 'alert' });
     area.append(notice);
   }
-  const dismiss = h('button', { type: 'button', class: 'btn btn-quiet', onclick: () => notice.remove() }, 'Dismiss');
+  const dismiss = h('button', {
+    type: 'button',
+    class: 'btn btn-quiet',
+    onclick: () => {
+      notice.remove();
+      // The button is gone, so put focus back at the start of the page content.
+      const main = document.getElementById('main');
+      if (main) main.focus();
+    },
+  }, 'Dismiss');
   notice.replaceChildren(h('p', null, message), dismiss);
 }
 

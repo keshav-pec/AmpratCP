@@ -1,6 +1,6 @@
 // Router and boot.
 
-import { createStore, BACKUP_KEY, setTheme, setSidebar, resolveTheme } from './store.js';
+import { createStore, STORAGE_KEY, BACKUP_KEY, setTheme, setSidebar, resolveTheme } from './store.js';
 import { showNotice, clearNotice, prefersReducedMotion } from './ui.js';
 import * as home from './views/home.js';
 import * as plan from './views/plan.js';
@@ -109,7 +109,8 @@ function flushCurrent() {
   if (current && current.flush) current.flush();
 }
 
-function render() {
+// `refresh` re-draws the current page in place (after another tab saved): no focus move, same scroll.
+function render({ refresh = false } = {}) {
   let route = parseHash();
   if (!route || !ROUTES[route.name]) {
     try {
@@ -129,8 +130,14 @@ function render() {
     else link.removeAttribute('aria-current');
   }
 
+  const scrollY = window.scrollY;
   viewRoot.replaceChildren();
   current = view.mount(viewRoot, { store, params: route.params }) || null;
+
+  if (refresh) {
+    window.scrollTo(0, scrollY);
+    return;
+  }
 
   // Move focus to the new content after navigation, or to a deep-linked item.
   const target = viewRoot.querySelector('[data-autofocus]');
@@ -146,7 +153,7 @@ function render() {
   firstRender = false;
 }
 
-window.addEventListener('hashchange', render);
+window.addEventListener('hashchange', () => render());
 window.addEventListener('pagehide', flushCurrent);
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'hidden') flushCurrent();
@@ -156,6 +163,27 @@ document.addEventListener('visibilitychange', () => {
 document.querySelector('.skip-link').addEventListener('click', (event) => {
   event.preventDefault();
   document.getElementById('main').focus();
+});
+
+// True while the user is in the middle of something here: an open dialog, typed text, or
+// focus on a control in this (focused) window. A re-draw then would lose their place.
+function isBusy() {
+  if (viewRoot.querySelector('dialog[open]')) return true;
+  const active = document.activeElement;
+  if (document.hasFocus() && active && active !== viewRoot && viewRoot.contains(active)) return true;
+  return [...viewRoot.querySelectorAll('input[type="text"], input[type="url"], input[type="search"]')]
+    .some((el) => el.value.trim() !== '');
+}
+
+// Another tab saved. Take its data first, so nothing here overwrites it, then save any
+// notes typed here and re-draw the page unless that would throw away what is being typed.
+window.addEventListener('storage', (event) => {
+  if (event.key !== null && event.key !== STORAGE_KEY) return;
+  if (!store.reload()) return;
+  applyTheme();
+  applySidebar();
+  flushCurrent();
+  if (!isBusy()) render({ refresh: true });
 });
 
 render();

@@ -454,4 +454,35 @@ describe('migration and persistence', () => {
     assert.equal(results.length, 1, 'committing the same state does not save again');
     assert.equal(JSON.parse(storage.getItem(STORAGE_KEY)).topics.c1.read, true);
   });
+
+  test('reload picks up what another tab saved, so this tab does not overwrite it', () => {
+    const storage = memoryStorage();
+    const tabA = createStore({ storage });
+    const tabB = createStore({ storage });
+    tabA.commit(toggleStep(tabA.get(), 'c1', 'read'));
+    assert.equal(tabB.reload(), true);
+    tabB.commit(toggleStep(tabB.get(), 'c2', 'read'));
+    const saved = JSON.parse(storage.getItem(STORAGE_KEY));
+    assert.equal(saved.topics.c1.read, true, "tab A's change survives tab B's save");
+    assert.equal(saved.topics.c2.read, true);
+    assert.equal(tabB.reload(), false, 'nothing new to load');
+  });
+
+  test('reload ignores unreadable data and keeps the current state', () => {
+    const storage = memoryStorage();
+    const store = createStore({ storage });
+    store.commit(toggleStep(store.get(), 'c1', 'read'));
+    storage.setItem(STORAGE_KEY, '{broken');
+    assert.equal(store.reload(), false);
+    assert.equal(store.get().topics.c1.read, true);
+  });
+
+  test('reload follows a cleared storage back to defaults', () => {
+    const storage = memoryStorage();
+    const store = createStore({ storage });
+    store.commit(toggleStep(store.get(), 'c1', 'read'));
+    storage.removeItem(STORAGE_KEY);
+    assert.equal(store.reload(), true);
+    assert.deepEqual(store.get(), defaultState());
+  });
 });
