@@ -2,6 +2,7 @@ import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { TOPICS, WEEKS, STEPS, topicsForWeek } from '../src/data.js';
+import { PRACTICE, csesUrl, codeforcesUrl } from '../src/practice.js';
 import {
   STORAGE_KEY, BACKUP_KEY, SCHEMA_VERSION, TOTAL_STEPS,
   defaultState, migrate, load, save, createStore,
@@ -9,6 +10,7 @@ import {
   setWeekCheck, weekChecklist, weekStatus, weekFill, currentWeek,
   validateProblem, addProblem, updateProblem, deleteProblem, markResolved,
   filterProblems, sortedProblems, revisitCount, mistakePatterns, isHttpUrl, defaultRevisit,
+  weekPracticeCounts, setTheme, setSidebar, resolveTheme,
 } from '../src/store.js';
 
 function memoryStorage(initial = {}) {
@@ -48,6 +50,41 @@ describe('static data', () => {
     for (const t of TOPICS) {
       for (const url of [t.visualize, t.reference]) if (url) assert.ok(url.startsWith('https://'), url);
     }
+  });
+
+  test('every topic has exact CSES and Codeforces practice problems', () => {
+    assert.deepEqual(Object.keys(PRACTICE).sort(), TOPICS.map((t) => t.id).sort());
+    for (const t of TOPICS) {
+      const { cses, cf } = t.practice;
+      assert.ok(cses.length >= 1, `${t.id} has a CSES problem`);
+      assert.ok(cf.length >= 3, `${t.id} has at least 3 Codeforces problems`);
+      for (const [id, name] of cses) {
+        assert.ok(Number.isInteger(id) && id >= 1000 && id < 10000, `${t.id}: CSES id ${id}`);
+        assert.ok(name.trim(), `${t.id}: CSES ${id} has a name`);
+      }
+      for (const [code, name] of cf) {
+        assert.match(code, /^\d+[A-Z]\d?$/, `${t.id}: Codeforces code ${code}`);
+        assert.ok(name.trim(), `${t.id}: Codeforces ${code} has a name`);
+      }
+      assert.equal(new Set(cses.map(([id]) => id)).size, cses.length, `${t.id}: no duplicate CSES ids`);
+      assert.equal(new Set(cf.map(([c]) => c)).size, cf.length, `${t.id}: no duplicate Codeforces codes`);
+    }
+  });
+
+  test('practice links point at the exact problem pages', () => {
+    assert.equal(csesUrl(1640), 'https://cses.fi/problemset/task/1640');
+    assert.equal(codeforcesUrl('279B'), 'https://codeforces.com/problemset/problem/279/B');
+    assert.equal(codeforcesUrl('1526C2'), 'https://codeforces.com/problemset/problem/1526/C2');
+    assert.throws(() => codeforcesUrl('bad'));
+  });
+
+  test('week practice counts add up the week\'s topics', () => {
+    const w1 = topicsForWeek(1);
+    assert.deepEqual(weekPracticeCounts(1), {
+      cses: w1.reduce((n, t) => n + t.practice.cses.length, 0),
+      cf: w1.reduce((n, t) => n + t.practice.cf.length, 0),
+    });
+    assert.deepEqual(weekPracticeCounts(8), { cses: 0, cf: 0 });
   });
 
   test('only week 7 Edge topics are optional', () => {
@@ -108,6 +145,8 @@ describe('topic steps', () => {
     assert.equal(topicMatches(s, c4, { show: 'open' }), true);
     assert.equal(topicMatches(s, c3, { query: 'binary SORT' }), true);
     assert.equal(topicMatches(s, c3, { query: 'graph' }), false);
+    assert.equal(topicMatches(s, c3, { query: 'ferris wheel' }), true, 'matches practice problem names');
+    assert.equal(topicMatches(s, c3, { query: '1201c' }), true, 'matches problem ids');
   });
 });
 
@@ -284,6 +323,37 @@ describe('problems', () => {
     assert.deepEqual(patterns.map((p) => [p.id, p.count]), [
       ['edge', 2], ['bug', 1], ['idea', 0], ['limits', 0], ['misread', 0],
     ]);
+  });
+});
+
+describe('preferences', () => {
+  test('default to the system theme and an expanded sidebar', () => {
+    assert.deepEqual(defaultState().prefs, { theme: 'system', sidebar: 'expanded' });
+  });
+
+  test('setTheme and setSidebar accept only known values', () => {
+    const s0 = defaultState();
+    const s1 = setTheme(s0, 'dark');
+    assert.equal(s1.prefs.theme, 'dark');
+    assert.equal(s0.prefs.theme, 'system');
+    assert.equal(setTheme(s1, 'dark'), s1);
+    assert.equal(setTheme(s0, 'purple'), s0);
+    const s2 = setSidebar(s1, 'collapsed');
+    assert.deepEqual(s2.prefs, { theme: 'dark', sidebar: 'collapsed' });
+    assert.equal(setSidebar(s2, 'sideways'), s2);
+  });
+
+  test('resolveTheme follows the system only for the system preference', () => {
+    assert.equal(resolveTheme('system', true), 'dark');
+    assert.equal(resolveTheme('system', false), 'light');
+    assert.equal(resolveTheme('light', true), 'light');
+    assert.equal(resolveTheme('dark', false), 'dark');
+  });
+
+  test('migrate keeps valid prefs, fixes bad ones and fills them in for older states', () => {
+    assert.deepEqual(migrate({ prefs: { theme: 'dark', sidebar: 'collapsed' } }).prefs, { theme: 'dark', sidebar: 'collapsed' });
+    assert.deepEqual(migrate({ prefs: { theme: 'neon', sidebar: 3 } }).prefs, { theme: 'system', sidebar: 'expanded' });
+    assert.deepEqual(migrate({ version: 1, topics: {}, weekChecks: {}, problems: [] }).prefs, { theme: 'system', sidebar: 'expanded' });
   });
 });
 

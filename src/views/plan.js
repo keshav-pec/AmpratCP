@@ -1,7 +1,7 @@
 import { h, svg, srOnly, externalLink, plural } from '../ui.js';
 import { WEEKS, STEPS, topicsForWeek } from '../data.js';
 import {
-  weekChecklist, weekStatus, currentWeek, stepsDone, revisitCount, setWeekCheck, STATUS_LABELS,
+  weekChecklist, weekStatus, currentWeek, stepsDone, revisitCount, setWeekCheck, weekPracticeCounts, STATUS_LABELS,
 } from '../store.js';
 
 function chevron() {
@@ -19,7 +19,13 @@ function statusBadge(status) {
   return h('span', { class: `status status-${status}` }, STATUS_LABELS[status]);
 }
 
-function hintFor(item, state) {
+function hintFor(item, state, week) {
+  if (item.hint === 'practice') {
+    const { cses, cf } = weekPracticeCounts(week.n);
+    const first = topicsForWeek(week.n)[0];
+    return h('a', { class: 'check-hint', href: `#/topics?topic=${first.id}` },
+      `${cses} CSES and ${cf} Codeforces problems, listed under each topic`);
+  }
   if (item.hint === 'revisit') {
     const n = revisitCount(state);
     return h('a', { class: 'check-hint', href: '#/problems?show=revisit' },
@@ -50,7 +56,7 @@ function manualItem(week, item, state) {
     h('div', { class: 'check-text' },
       h('label', { for: id }, item.label),
       item.link ? externalLink(item.link.url, item.link.label) : null,
-      hintFor(item, state),
+      hintFor(item, state, week),
     ),
   );
 }

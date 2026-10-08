@@ -1,5 +1,6 @@
 import { h, svg, srOnly, externalLink, plural } from '../ui.js';
-import { WEEKS, STEPS, TOPICS, TOPIC_BY_ID, CSES_URL, BOOK_PATH, BOOK_PAGE_OFFSET, topicsForWeek } from '../data.js';
+import { WEEKS, STEPS, TOPICS, TOPIC_BY_ID, BOOK_PATH, BOOK_PAGE_OFFSET, topicsForWeek } from '../data.js';
+import { csesUrl, codeforcesUrl } from '../practice.js';
 import { stepsDone, isTopicDone, toggleStep, setNotes, topicMatches } from '../store.js';
 
 const NOTES_DELAY = 400;
@@ -34,8 +35,23 @@ function topicLinks(topic) {
   if (topic.reference) {
     links.push(externalLink(topic.reference, `Reference: ${referenceName(topic.reference)}`));
   }
-  links.push(externalLink(CSES_URL, `Practice: CSES ${topic.cses}`));
   return h('ul', { class: 'topic-links' }, links.map((a) => h('li', null, a)));
+}
+
+function practiceRow(site, topic, problems, toUrl) {
+  return h('div', { class: 'practice-row' },
+    h('span', { class: 'practice-site', 'aria-hidden': 'true' }, site),
+    h('ul', { class: 'practice-list', 'aria-label': `${site} practice problems for ${topic.title}` },
+      problems.map(([id, name]) => h('li', null,
+        externalLink(toUrl(id), h('span', { class: 'pid' }, String(id)), ' ', name)))),
+  );
+}
+
+function practiceProblems(topic) {
+  return h('div', { class: 'practice' },
+    practiceRow('CSES', topic, topic.practice.cses, csesUrl),
+    practiceRow('Codeforces', topic, topic.practice.cf, codeforcesUrl),
+  );
 }
 
 function countText(state, topicId) {
@@ -66,6 +82,7 @@ function topicRow(topic, state) {
       }, tick(), step.label)),
     ),
     topicLinks(topic),
+    practiceProblems(topic),
     h('details', { class: 'notes', open: Boolean(progress.notes) },
       h('summary', null, 'Notes'),
       h('label', { for: notesId }, `Your notes on ${topic.title}`),

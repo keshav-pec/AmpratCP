@@ -15,9 +15,17 @@ streaks, so you move through it at your own pace. Each topic follows the same 5-
 - **Plan:** the 8 weeks, each with its topics, a checklist and a status (Not started,
   In progress or Done). Every week is always open.
 - **Topics:** all 37 topics in plan order, with step chips, links to the handbook,
-  visualizations, references and CSES practice, plus personal notes.
+  visualizations and references, exact practice problems (CSES task ids and Codeforces
+  problem codes, 260 in total), and personal notes. Search matches problem names and ids too.
 - **Problem log:** problems you struggled with, what went wrong, the key idea you missed,
   and whether to revisit them. A "Mistake patterns" line counts your most common mistakes.
+
+Two small conveniences sit in the sidebar:
+
+- **Dark mode.** The app follows your system's light or dark setting until you press
+  "Dark mode", and then remembers your choice.
+- **Collapse sidebar.** On wider screens the sidebar shrinks to a narrow rail of icons.
+  On phones the navigation is a top bar instead.
 
 ## Run it
 
@@ -53,6 +61,7 @@ Everything you enter is stored **only in this browser**, in `localStorage` under
 - If the stored data ever becomes unreadable, the app starts fresh and keeps the unreadable
   value under `balloonroom:v1:backup`, so it can still be recovered by hand.
 - If saving fails (for example, if storage is full), the app shows a message.
+- Your theme and sidebar choices are saved with the rest of your data.
 
 ## Tests
 
@@ -63,8 +72,8 @@ built-in test runner (Node 18 or newer):
 node --test
 ```
 
-To check that every external link still works, run this from a machine with internet
-access:
+To check that every external link still works (including all 260 practice problems),
+run this from a machine with internet access:
 
 ```sh
 node tools/check-links.js
@@ -77,6 +86,7 @@ index.html          page shell
 styles.css          all styles (olive, gold and beige design tokens)
 src/main.js         router and boot
 src/data.js         static content: steps, topics, weeks
+src/practice.js     exact CSES and Codeforces practice problems for each topic
 src/store.js        state, pure update functions, persistence, migrate()
 src/ui.js           DOM helpers (text-only rendering), inline confirm, toast
 src/views/*.js      home, plan, topics, problems

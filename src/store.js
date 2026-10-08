@@ -17,6 +17,13 @@ const MISTAKE_IDS = MISTAKES.map((m) => m.id);
 const isObject = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 const str = (v) => (typeof v === 'string' ? v : '');
 
+export const THEMES = ['system', 'light', 'dark'];
+export const SIDEBAR_STATES = ['expanded', 'collapsed'];
+
+function defaultPrefs() {
+  return { theme: 'system', sidebar: 'expanded' };
+}
+
 function emptyTopic() {
   return { read: false, visual: false, code: false, practice: false, revise: false, notes: '' };
 }
@@ -27,6 +34,7 @@ export function defaultState() {
     topics: Object.fromEntries(TOPICS.map((t) => [t.id, emptyTopic()])),
     weekChecks: {},
     problems: [],
+    prefs: defaultPrefs(),
   };
 }
 
@@ -68,6 +76,7 @@ export function migrate(raw) {
 
   // Version 0 is anything saved without a `version` field. It used the same field
   // names, so the normalisation below covers it; future versions add steps here.
+  // `prefs` was added later within version 1; states without it get the defaults.
 
   if (isObject(raw.topics)) {
     for (const [id, value] of Object.entries(raw.topics)) {
@@ -85,6 +94,11 @@ export function migrate(raw) {
       }
       if (Object.keys(clean).length) state.weekChecks[w.n] = clean;
     }
+  }
+
+  if (isObject(raw.prefs)) {
+    if (THEMES.includes(raw.prefs.theme)) state.prefs.theme = raw.prefs.theme;
+    if (SIDEBAR_STATES.includes(raw.prefs.sidebar)) state.prefs.sidebar = raw.prefs.sidebar;
   }
 
   if (Array.isArray(raw.problems)) {
@@ -220,9 +234,18 @@ export function topicMatches(state, topic, { show = 'all', query = '' } = {}) {
   if (show === 'done' && !done) return false;
   const q = query.trim().toLowerCase();
   if (!q) return true;
-  const haystack = [topic.title, topic.cses, topic.priority, topic.chapter ? `chapter ${topic.chapter}` : '']
+  const problems = [...topic.practice.cses, ...topic.practice.cf].map(([id, name]) => `${id} ${name}`);
+  const haystack = [topic.title, topic.priority, topic.chapter ? `chapter ${topic.chapter}` : '', ...problems]
     .join(' ').toLowerCase();
   return q.split(/\s+/).every((word) => haystack.includes(word));
+}
+
+// Every CSES and Codeforces problem listed for a week's topics.
+export function weekPracticeCounts(weekNumber) {
+  return topicsForWeek(weekNumber).reduce(
+    (acc, t) => ({ cses: acc.cses + t.practice.cses.length, cf: acc.cf + t.practice.cf.length }),
+    { cses: 0, cf: 0 },
+  );
 }
 
 // ---------- weeks ----------
@@ -401,4 +424,22 @@ export function mistakePatterns(problems) {
     .map((m, order) => ({ id: m.id, label: m.label, count: problems.filter((p) => p.mistake === m.id).length, order }))
     .sort((a, b) => (b.count - a.count) || (a.order - b.order))
     .map(({ id, label, count }) => ({ id, label, count }));
+}
+
+// ---------- preferences ----------
+
+export function setTheme(state, theme) {
+  if (!THEMES.includes(theme) || state.prefs.theme === theme) return state;
+  return { ...state, prefs: { ...state.prefs, theme } };
+}
+
+export function setSidebar(state, sidebar) {
+  if (!SIDEBAR_STATES.includes(sidebar) || state.prefs.sidebar === sidebar) return state;
+  return { ...state, prefs: { ...state.prefs, sidebar } };
+}
+
+// 'light' or 'dark'. A 'system' preference follows the operating system.
+export function resolveTheme(pref, systemPrefersDark) {
+  if (pref === 'light' || pref === 'dark') return pref;
+  return systemPrefersDark ? 'dark' : 'light';
 }

@@ -1,6 +1,6 @@
 // Router and boot.
 
-import { createStore, BACKUP_KEY } from './store.js';
+import { createStore, BACKUP_KEY, setTheme, setSidebar, resolveTheme } from './store.js';
 import { showNotice, clearNotice, prefersReducedMotion } from './ui.js';
 import * as home from './views/home.js';
 import * as plan from './views/plan.js';
@@ -41,6 +41,59 @@ if (store.loadStatus === 'corrupt') {
   showNotice('load-unavailable', "This browser isn't letting Balloon Room use storage, so your progress won't be kept after you close the tab.");
 }
 
+// ---------- theme and sidebar ----------
+
+const root = document.documentElement;
+const darkQuery = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+const themeToggle = document.getElementById('theme-toggle');
+const sidebarToggle = document.getElementById('sidebar-toggle');
+const THEME_COLORS = { light: '#F7F2E4', dark: '#1B1C14' };
+
+function applyTheme() {
+  const theme = resolveTheme(store.get().prefs.theme, Boolean(darkQuery && darkQuery.matches));
+  root.setAttribute('data-theme', theme);
+  themeToggle.setAttribute('aria-pressed', String(theme === 'dark'));
+  document.querySelector('meta[name="theme-color"]').setAttribute('content', THEME_COLORS[theme]);
+}
+
+function applySidebar() {
+  const collapsed = store.get().prefs.sidebar === 'collapsed';
+  const label = collapsed ? 'Expand sidebar' : 'Collapse sidebar';
+  root.setAttribute('data-sidebar', collapsed ? 'collapsed' : 'expanded');
+  document.getElementById('sidebar-toggle-label').textContent = label;
+  sidebarToggle.title = label;
+  // Icon-only links get a tooltip; with labels showing it would just repeat them.
+  for (const link of document.querySelectorAll('.nav a')) {
+    if (collapsed) link.title = link.querySelector('.nav-label').textContent;
+    else link.removeAttribute('title');
+  }
+  if (collapsed) themeToggle.title = 'Dark mode';
+  else themeToggle.removeAttribute('title');
+}
+
+themeToggle.addEventListener('click', () => {
+  const next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  store.commit(setTheme(store.get(), next));
+  applyTheme();
+});
+
+sidebarToggle.addEventListener('click', () => {
+  const next = store.get().prefs.sidebar === 'collapsed' ? 'expanded' : 'collapsed';
+  store.commit(setSidebar(store.get(), next));
+  applySidebar();
+});
+
+if (darkQuery) {
+  darkQuery.addEventListener('change', () => {
+    if (store.get().prefs.theme === 'system') applyTheme();
+  });
+}
+
+applyTheme();
+applySidebar();
+
+// ---------- router ----------
+
 const viewRoot = document.getElementById('view');
 let current = null;
 let firstRender = true;
@@ -59,7 +112,11 @@ function flushCurrent() {
 function render() {
   let route = parseHash();
   if (!route || !ROUTES[route.name]) {
-    history.replaceState(null, '', '#/home');
+    try {
+      history.replaceState(null, '', '#/home');
+    } catch {
+      // Some sandboxed frames refuse history changes; Home still renders.
+    }
     route = { name: 'home', params: new URLSearchParams() };
   }
 
