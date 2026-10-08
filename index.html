@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Balloon Room</title>
+  <meta name="description" content="A personal, self-paced ICPC preparation tracker.">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#F7F2E4">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 58'%3E%3Cpath d='M20 38 C11 33 4 26 4 17 C4 8.2 11.2 2 20 2 C28.8 2 36 8.2 36 17 C36 26 29 33 20 38 Z' fill='%23D4AF37' stroke='%235A6B2E' stroke-width='3'/%3E%3Cpath d='M20 41 C17 46 23 51 20 57' fill='none' stroke='%235A6B2E' stroke-width='2'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=JetBrains+Mono:wght@400;500&family=Source+Sans+3:wght@400;600;700&display=swap">
+  <link rel="stylesheet" href="./styles.css">
+  <script type="module" src="./src/main.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div class="app">
+    <header class="sidebar">
+      <a class="brand" href="#/home">Balloon Room</a>
+      <p class="brand-sub">ICPC preparation at your own pace</p>
+      <nav class="nav" aria-label="Main">
+        <ul>
+          <li><a href="#/home" data-route="home">Home</a></li>
+          <li><a href="#/plan" data-route="plan">Plan</a></li>
+          <li><a href="#/topics" data-route="topics">Topics</a></li>
+          <li><a href="#/problems" data-route="problems">Problem log</a></li>
+        </ul>
+      </nav>
+      <p class="sidebar-note">Saved in this browser only.</p>
+    </header>
+    <main id="main" class="main" tabindex="-1">
+      <div id="notices" class="notices"></div>
+      <div id="view" class="view">
+        <noscript><p>Balloon Room needs JavaScript to run.</p></noscript>
+      </div>
+    </main>
+  </div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
