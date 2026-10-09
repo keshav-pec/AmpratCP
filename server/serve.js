@@ -44,7 +44,7 @@ export function createAppServer({ env = process.env, log = console } = {}) {
   const storage = storageFromEnv(env);
   const sync = createSyncHandler({
     storage,
-    syncKey: env.SYNC_KEY,
+    syncKey: String(env.SYNC_KEY || '').trim(),
     allowedOrigins: parseOrigins(env.ALLOWED_ORIGINS),
     log,
   });

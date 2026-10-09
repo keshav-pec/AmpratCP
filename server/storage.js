@@ -22,13 +22,15 @@ export function createMemoryStorage() {
 
 // `connect` is injectable for tests; by default it loads the official driver on first use,
 // so the rest of the server (and the test suite) runs without it installed.
-export function createMongoStorage({ uri, dbName = 'balloonroom', collectionName = 'state', connect } = {}) {
+// Pass `MongoClient` when the driver is imported statically (the Vercel function does, so the
+// bundler can't leave the driver out).
+export function createMongoStorage({ uri, dbName = 'balloonroom', collectionName = 'state', connect, MongoClient = null } = {}) {
   if (!uri) throw new Error('A MongoDB connection string is required');
   let clientPromise = null;
 
   async function defaultConnect() {
-    const { MongoClient } = await import('mongodb');
-    const client = new MongoClient(uri, { serverSelectionTimeoutMS: 8000, maxPoolSize: 5, appName: 'balloon-room' });
+    const Client = MongoClient || (await import('mongodb')).MongoClient;
+    const client = new Client(uri, { serverSelectionTimeoutMS: 8000, maxPoolSize: 5, appName: 'balloon-room' });
     await client.connect();
     return client;
   }
@@ -79,8 +81,10 @@ export function createMongoStorage({ uri, dbName = 'balloonroom', collectionName
 }
 
 // Picks the store from environment variables. Returns null when sync isn't configured.
-export function storageFromEnv(env) {
-  if (env.MONGODB_URI) return createMongoStorage({ uri: env.MONGODB_URI, dbName: env.MONGODB_DB || 'balloonroom' });
+export function storageFromEnv(env, { MongoClient = null } = {}) {
+  // Values pasted into a dashboard often pick up spaces, a newline or surrounding quotes.
+  const uri = String(env.MONGODB_URI || '').trim().replace(/^(['"])(.*)\1$/, '$2');
+  if (uri) return createMongoStorage({ uri, dbName: (env.MONGODB_DB || '').trim() || 'balloonroom', MongoClient });
   if (env.SYNC_STORE === 'memory') return createMemoryStorage(); // local testing only: forgets everything on restart
   return null;
 }

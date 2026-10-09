@@ -21,14 +21,25 @@ const ERROR_TEXT = {
 // Short words for the button's name and tooltip, which always start with its visible label.
 const STATE_WORDS = { off: 'off', syncing: 'syncing', synced: 'synced', offline: 'offline', error: 'not syncing' };
 
-function connectError(code, server) {
+// Why the server couldn't use the database, as the server reports it.
+const STORAGE_REASONS = {
+  auth: "The database didn't accept the username or password in MONGODB_URI. If you copied the string from Atlas, replace <db_password> (including the angle brackets) with the real password, and write characters like @ : / ? # % in it as %40 %3A %2F %3F %23 %25. If you changed the password, update MONGODB_URI in Vercel and redeploy.",
+  network: "The server couldn't connect to your Atlas cluster. In Atlas, open Network Access, add 0.0.0.0/0 (Allow access from anywhere), wait until it shows Active, then try again. Also check the cluster isn't paused.",
+  dns: "The cluster address in MONGODB_URI doesn't exist. Copy the connection string again from Atlas (Connect, then Drivers), put the password in, update MONGODB_URI in Vercel and redeploy.",
+  uri: "MONGODB_URI isn't a valid connection string. It should look like mongodb+srv://user:password@cluster.xxxxx.mongodb.net/ with no quotes or spaces, and special characters in the password written as %40 and so on.",
+  permission: "The database user can sign in but isn't allowed to read and write. In Atlas, open Database Access and give it the readWrite role on the balloonroom database (or 'Read and write to any database').",
+  driver: "The server is missing the MongoDB driver. Redeploy from the latest code so Vercel installs it.",
+};
+
+function connectError(code, server, reason) {
+  if (code === 'storage' && STORAGE_REASONS[reason]) return STORAGE_REASONS[reason];
   switch (code) {
     case 'address': return 'Enter a full address, like https://your-project.vercel.app, or leave this empty.';
     case 'https': return 'Use an address that starts with https://, so your sync key stays private on the way.';
     case 'key': return 'Enter your sync key.';
     case 'auth': return "That sync key wasn't accepted. Check that it matches SYNC_KEY on the server, including capitals.";
     case 'not-configured': return "The server is running, but sync isn't set up on it yet. Set MONGODB_URI and SYNC_KEY (at least 16 characters) in its settings, then deploy again.";
-    case 'storage': return "The server couldn't reach the database. Check MONGODB_URI on the server and the database's network access list.";
+    case 'storage': return "The server couldn't use the database. Your Vercel project's Logs show the cause next to \"Sync storage error\".";
     case 'not-found': return server
       ? "There's no sync server at that address. Check it, or leave it empty if this page is served by your sync server."
       : "This site has no sync server. Enter your sync server's address, like https://your-project.vercel.app.";
@@ -153,7 +164,7 @@ export function createSyncUi({ sync, button, note }) {
     cancelBtn.disabled = false;
     connectBtn.textContent = 'Connect';
     if (!result.ok) {
-      showForm(connectError(result.error, serverInput.value.trim()));
+      showForm(connectError(result.error, serverInput.value.trim(), result.reason));
       const field = ['key', 'auth'].includes(result.error) ? keyInput : serverInput;
       field.setAttribute('aria-invalid', 'true');
       field.focus();

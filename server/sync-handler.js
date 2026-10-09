@@ -17,6 +17,21 @@ export function cleanData(raw) {
   return syncedData(migrate(raw));
 }
 
+// Sorts a database failure into a cause you can act on. Only devices that already passed the
+// sync key check ever see it, and it never includes the connection string.
+export function storageReason(err) {
+  const name = (err && err.name) || '';
+  const message = String((err && err.message) || '');
+  const code = err && err.code;
+  if (code === 'ERR_MODULE_NOT_FOUND' || /Cannot find (package|module) 'mongodb'/.test(message)) return 'driver';
+  if (name === 'MongoParseError' || /Invalid scheme|unescaped|URI must include|Invalid connection string/i.test(message)) return 'uri';
+  if (code === 18 || code === 8000 || /bad auth|authentication failed/i.test(message)) return 'auth';
+  if (code === 13 || /not authorized|not allowed to do action/i.test(message)) return 'permission';
+  if (/ENOTFOUND|querySrv|ENODATA|EBADNAME/.test(message)) return 'dns';
+  if (name === 'MongoServerSelectionError' || /timed out|ETIMEDOUT|ECONNREFUSED|ECONNRESET|closed/i.test(message)) return 'network';
+  return 'other';
+}
+
 // Just in case a driver message ever includes a connection string, hide its user and password.
 export function redact(message) {
   return String(message).replace(/\/\/[^@/\s]*@/g, '//<credentials>@');
@@ -129,8 +144,9 @@ export function createSyncHandler({ storage, syncKey, allowedOrigins = [], maxBy
       return send(res, 405, { error: 'method-not-allowed' }, { ...cors, Allow: 'GET, PUT, OPTIONS' });
     } catch (err) {
       if (err && err.status) return send(res, err.status, { error: err.code }, cors);
-      log.error('Sync storage error:', redact(err && err.message));
-      return send(res, 502, { error: 'storage-unavailable' }, cors);
+      const reason = storageReason(err);
+      log.error(`Sync storage error (${reason}):`, redact(err && err.message));
+      return send(res, 502, { error: 'storage-unavailable', reason }, cors);
     }
   };
 }

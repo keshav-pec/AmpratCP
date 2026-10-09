@@ -370,6 +370,8 @@ describe('sync errors', () => {
       const sync = createSync({ store, fetch: async () => answer(), log: quiet });
       assert.deepEqual(await sync.connect({ server: '', key: KEY }), { ok: false, error: code });
     }
+    const atlas = createSync({ store: createStore({ storage: null }), fetch: async () => Response.json({ error: 'storage-unavailable', reason: 'network' }, { status: 502 }), log: quiet });
+    assert.deepEqual(await atlas.connect({ server: '', key: KEY }), { ok: false, error: 'storage', reason: 'network' });
     const store = createStore({ storage: null });
     const page = createSync({ store, fetch: async () => new Response('<html>a static page</html>'), log: quiet });
     assert.deepEqual(await page.connect({ server: '', key: KEY }), { ok: false, error: 'not-found' });

@@ -18,9 +18,10 @@ const KEEPALIVE_LIMIT = 60000; // browsers refuse keepalive requests over 64 KB
 const LOCAL_HOSTS = ['localhost', '127.0.0.1', '[::1]'];
 
 export class SyncError extends Error {
-  constructor(code) {
+  constructor(code, reason = null) {
     super(code);
     this.code = code;
+    this.reason = reason;
   }
 }
 
@@ -173,7 +174,7 @@ export function createSync({
     }
     const code = json && typeof json.error === 'string' ? json.error : null;
     if (res.ok && json && Number.isInteger(json.rev)) return { conflict: json.conflict === true, rev: json.rev, data: json.data };
-    throw new SyncError(errorFor(res.status, code));
+    throw new SyncError(errorFor(res.status, code), json && typeof json.reason === 'string' ? json.reason : null);
   }
 
   // Puts a merged or downloaded copy into the app, keeping anything changed here meanwhile.
@@ -331,7 +332,8 @@ export function createSync({
       try {
         await request(config, 'GET');
       } catch (err) {
-        return { ok: false, error: err instanceof SyncError ? err.code : 'server' };
+        if (!(err instanceof SyncError)) return { ok: false, error: 'server' };
+        return err.reason ? { ok: false, error: err.code, reason: err.reason } : { ok: false, error: err.code };
       }
       generation += 1;
       blockedKey = null;

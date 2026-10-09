@@ -168,6 +168,23 @@ The status under the sidebar buttons says whether you're synced, syncing, offlin
 went wrong. To stop syncing on one device, open **Sync devices** and press
 **Disconnect this device**. Its progress stays in that browser.
 
+### If it says the server couldn't use the database
+
+The connect dialog names the cause. Your Vercel project's **Logs** also show it, on a line
+starting `Sync storage error (…)`.
+
+| Cause | Fix |
+| --- | --- |
+| `network` | Atlas → *Network Access* → add `0.0.0.0/0` and wait until it's *Active*. Check the cluster isn't paused. |
+| `auth` | The user or password in `MONGODB_URI` is wrong. Replace `<db_password>` (brackets included) with the real password, write `@ : / ? # %` in it as `%40 %3A %2F %3F %23 %25`, and update the variable after any password change. |
+| `dns` | The cluster address is wrong: copy the string again from Atlas → *Connect* → *Drivers*. |
+| `uri` | The value isn't a connection string. It should start with `mongodb+srv://`, with no quotes. |
+| `permission` | Give the user the *readWrite* role on `balloonroom` in Atlas → *Database Access*. |
+| `driver` | Redeploy from the latest code. |
+
+After changing an environment variable in Vercel, **redeploy** (Deployments → ⋯ → Redeploy):
+running deployments keep the old values.
+
 ### Keep it safe
 
 - The connection string belongs only in Vercel's *Environment Variables* (or your server's

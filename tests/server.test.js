@@ -1,7 +1,7 @@
 import { test, describe, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { createAppServer, publicFile } from '../server/serve.js';
-import { createSyncHandler, cleanData, parseOrigins, redact, MAX_BODY_BYTES } from '../server/sync-handler.js';
+import { createSyncHandler, cleanData, parseOrigins, redact, storageReason, MAX_BODY_BYTES } from '../server/sync-handler.js';
 import { createMemoryStorage, createMongoStorage, storageFromEnv } from '../server/storage.js';
 import { TOPICS } from '../src/data.js';
 
@@ -168,7 +168,7 @@ describe('sync handler', () => {
     const res = fakeRes();
     await handler({ method: 'GET', headers: { authorization: `Bearer ${KEY}` } }, res);
     assert.equal(res.statusCode, 502);
-    assert.deepEqual(JSON.parse(res.body), { error: 'storage-unavailable' });
+    assert.deepEqual(JSON.parse(res.body), { error: 'storage-unavailable', reason: 'dns' });
     assert.equal(logged.length, 1);
     assert.doesNotMatch(logged[0], /hunter2/);
     assert.match(logged[0], /ENOTFOUND/);
@@ -322,5 +322,36 @@ describe('MongoDB connection', () => {
 
   test('needs a connection string', () => {
     assert.throws(() => createMongoStorage({}), /connection string/);
+  });
+});
+
+describe('database problems are named', () => {
+  const err = (name, message, code) => Object.assign(new Error(message), { name, code });
+  test('storageReason sorts driver errors into causes', () => {
+    assert.equal(storageReason(err('MongoServerError', 'bad auth : authentication failed', 8000)), 'auth');
+    assert.equal(storageReason(err('MongoServerError', 'Authentication failed.', 18)), 'auth');
+    assert.equal(storageReason(err('MongoServerSelectionError', 'Server selection timed out after 8000 ms')), 'network');
+    assert.equal(storageReason(err('MongoServerSelectionError', 'connection <monitor> to 1.2.3.4:27017 closed')), 'network');
+    assert.equal(storageReason(err('Error', 'querySrv ENOTFOUND _mongodb._tcp.nope.mongodb.net')), 'dns');
+    assert.equal(storageReason(err('MongoParseError', 'Password contains unescaped characters')), 'uri');
+    assert.equal(storageReason(err('MongoServerError', 'user is not allowed to do action [insert] on [balloonroom.state]', 8000)), 'auth');
+    assert.equal(storageReason(err('MongoServerError', 'not authorized on balloonroom to execute command', 13)), 'permission');
+    assert.equal(storageReason(err('Error', "Cannot find package 'mongodb' imported from /var/task/server/storage.js", 'ERR_MODULE_NOT_FOUND')), 'driver');
+    assert.equal(storageReason(new Error('something else')), 'other');
+  });
+
+  test('the real driver reports a bad connection string and an unknown cluster', async () => {
+    for (const [uri, reason] of [['mongodb+srv://user:p@ss@cluster0.example.mongodb.net/', 'uri'], ['mongodb+srv://u:p@no-such-cluster.invalid/', 'dns']]) {
+      const server = createAppServer({ env: { MONGODB_URI: uri, SYNC_KEY: KEY }, log: quiet });
+      const base = await listen(server);
+      const res = await call(base);
+      assert.equal(res.status, 502);
+      assert.deepEqual(await res.json(), { error: 'storage-unavailable', reason }, uri);
+      server.close();
+    }
+  });
+
+  test('a pasted connection string with quotes or spaces still works', () => {
+    assert.equal(typeof storageFromEnv({ MONGODB_URI: ' "mongodb://localhost:1" \n' }).write, 'function');
   });
 });
