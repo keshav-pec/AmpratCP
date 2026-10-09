@@ -1,5 +1,5 @@
 import { h, svg, srOnly, externalLink, plural } from '../ui.js';
-import { WEEKS, STEPS, TOPICS, TOPIC_BY_ID, BOOK_PATH, BOOK_PAGE_OFFSET, topicsForWeek } from '../data.js';
+import { WEEKS, STEPS, TOPICS, TOPIC_BY_ID, topicsForWeek, handbookUrl } from '../data.js';
 import { csesUrl, codeforcesUrl } from '../practice.js';
 import { stepsDone, isTopicDone, toggleStep, setNotes, topicMatches } from '../store.js';
 
@@ -24,7 +24,7 @@ function referenceName(url) {
 function topicLinks(topic) {
   const links = [];
   if (topic.page) {
-    links.push(externalLink(`${BOOK_PATH}#page=${topic.page + BOOK_PAGE_OFFSET}`, `Handbook p. ${topic.page}`));
+    links.push(externalLink(handbookUrl(topic.page), `Handbook: chapter ${topic.chapter}, p. ${topic.page}`));
   }
   if (topic.visualize) {
     links.push(externalLink(topic.visualize, 'Visualize on VisuAlgo'));
@@ -68,12 +68,12 @@ function topicRow(topic, state) {
 
   return h('li', { class: `card topic${isTopicDone(state, topic.id) ? ' is-done' : ''}`, id: `topic-${topic.id}`, dataset: { topic: topic.id } },
     h('div', { class: 'topic-head' },
-      h('span', { class: 'chapter', title: topic.chapter ? `Chapter ${topic.chapter}` : 'Not in the book' },
-        topic.chapter ? [srOnly('Chapter '), String(topic.chapter)] : ['+', srOnly(' (not in the book)')]),
+      h('span', { class: 'topic-num' }, srOnly('Topic '), String(topic.number)),
       h('h3', { class: 'topic-title', tabindex: '-1' }, topic.title),
       h('span', { class: 'topic-badges' },
         h('span', { class: `badge badge-${topic.priority.toLowerCase()}` }, topic.priority),
-        topic.optional ? h('span', { class: 'badge badge-optional' }, 'Optional') : null),
+        topic.optional ? h('span', { class: 'badge badge-optional' }, 'Optional') : null,
+        h('span', { class: 'topic-chapter' }, topic.chapter ? `Chapter ${topic.chapter}` : 'Not in the book')),
       h('span', { class: 'topic-count' }, h('span', { class: 'js-count' }, countText(state, topic.id)), srOnly(' steps done')),
     ),
     h('p', { class: 'topic-focus' }, topic.focus),

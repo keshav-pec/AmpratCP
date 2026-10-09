@@ -1,7 +1,7 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { TOPICS, WEEKS, STEPS, topicsForWeek } from '../src/data.js';
+import { TOPICS, WEEKS, STEPS, topicsForWeek, handbookUrl } from '../src/data.js';
 import { PRACTICE, csesUrl, codeforcesUrl } from '../src/practice.js';
 import {
   STORAGE_KEY, BACKUP_KEY, SCHEMA_VERSION, TOTAL_STEPS,
@@ -533,5 +533,20 @@ describe('migration and persistence', () => {
     storage.removeItem(STORAGE_KEY);
     assert.equal(store.reload(), true);
     assert.deepEqual(store.get(), defaultState());
+  });
+});
+
+describe('topic numbers and handbook links', () => {
+  test('topics are numbered 1, 2, 3… in plan order', () => {
+    assert.deepEqual(TOPICS.map((t) => t.number), TOPICS.map((_, i) => i + 1));
+    for (const w of WEEKS) {
+      const nums = topicsForWeek(w.n).map((t) => t.number);
+      nums.forEach((n, i) => { if (i) assert.equal(n, nums[i - 1] + 1, `week ${w.n} runs in order`); });
+    }
+  });
+
+  test('handbook links open the reader on the PDF page, 10 after the printed page', () => {
+    assert.equal(handbookUrl(25), './book.html#page=35');
+    assert.equal(handbookUrl(84), './book.html#page=94');
   });
 });

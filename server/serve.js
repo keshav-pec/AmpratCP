@@ -20,7 +20,8 @@ const TYPES = {
 };
 
 // Only the app's own files are served, never .env, .git, node_modules or the server code.
-const PUBLIC_FILES = new Set(['index.html', 'styles.css', 'CP_book.pdf']);
+const PUBLIC_FILES = new Set(['index.html', 'book.html', 'styles.css', 'CP_book.pdf']);
+const SCRIPT_DIRS = ['src', 'vendor'];
 
 // Maps a URL path to a file the app needs, or null.
 export function publicFile(pathname) {
@@ -34,7 +35,7 @@ export function publicFile(pathname) {
   const rel = path.slice(1);
   const parts = rel.split('/');
   if (parts.some((part) => !part || part.startsWith('.') || part.includes('\\') || part.includes('\0'))) return null;
-  const isAppScript = parts[0] === 'src' && extname(rel) === '.js';
+  const isAppScript = SCRIPT_DIRS.includes(parts[0]) && extname(rel) === '.js';
   if (!PUBLIC_FILES.has(rel) && !isAppScript) return null;
   return join(ROOT, ...parts);
 }

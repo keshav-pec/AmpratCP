@@ -18,6 +18,14 @@ export const GYM_URL = 'https://codeforces.com/gym';
 // The PDF has 10 front-matter pages before book page 1.
 export const BOOK_PAGE_OFFSET = 10;
 export const BOOK_PATH = './CP_book.pdf';
+// The built-in reader opens the handbook on the right page in every browser, phones included
+// (many ignore #page=N on a plain PDF link).
+export const READER_PATH = './book.html';
+
+// Link to a book page (as printed in the handbook) in the reader. The PDF page is 10 later.
+export function handbookUrl(bookPage) {
+  return `${READER_PATH}#page=${bookPage + BOOK_PAGE_OFFSET}`;
+}
 
 // Past ICPC India contests (Kanpur, Amritapuri and others) with links for upsolving.
 export const INDIA_CONTESTS_URL = 'https://codeforces.com/blog/entry/105000';
@@ -178,6 +186,10 @@ export const TOPICS = [
     'Multiplying polynomials in O(n log n) for convolutions, counting sums, and fuzzy string matching.',
     { reference: CPA('algebra/fft') }),
 ];
+
+// Topics are numbered 1, 2, 3… in plan order. (Chapter numbers no longer run in order, and two
+// topics come from chapter 9 and two from chapter 18, so they can't serve as numbers.)
+TOPICS.forEach((t, i) => { t.number = i + 1; });
 
 export const TOTAL_STEPS = TOPICS.length * STEPS.length;
 

@@ -212,9 +212,12 @@ describe('server helpers', () => {
     assert.match(publicFile('/styles.css'), /styles\.css$/);
     assert.match(publicFile('/src/views/home.js'), /home\.js$/);
     assert.match(publicFile('/CP_book.pdf'), /CP_book\.pdf$/);
+    assert.match(publicFile('/book.html'), /book\.html$/);
+    assert.match(publicFile('/vendor/pdfjs/pdf.worker.min.js'), /pdf\.worker\.min\.js$/);
     for (const path of ['/.env', '/.git/config', '/package.json', '/server/storage.js', '/api/state.js',
       '/node_modules/mongodb/package.json', '/src/../package.json', '/%2e%2e/package.json', '/src/%2e%2e/.env',
-      '/src//main.js', '/src/main.js%00', '/src/..%5c..%5c.env', '/%E0%A4%A', '/src/notes.txt', '/tests/store.test.js']) {
+      '/src//main.js', '/src/main.js%00', '/src/..%5c..%5c.env', '/%E0%A4%A', '/src/notes.txt', '/tests/store.test.js',
+      '/vendor/pdfjs/LICENSE', '/vendor/../server/serve.js']) {
       assert.equal(publicFile(path), null, path);
     }
   });

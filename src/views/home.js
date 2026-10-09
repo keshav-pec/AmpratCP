@@ -79,7 +79,7 @@ function continueCard(state) {
   const where = topic.chapter ? `Chapter ${topic.chapter}` : 'Not in the book';
   card.append(
     h('p', { class: 'card-title' }, topic.title),
-    h('p', { class: 'muted' }, `Week ${topic.week} · ${where} · ${stepsDone(state, topic.id)} of ${STEPS.length} steps`),
+    h('p', { class: 'muted' }, `Topic ${topic.number} · Week ${topic.week} · ${where} · ${stepsDone(state, topic.id)} of ${STEPS.length} steps`),
     h('p', { class: 'small' }, topic.focus),
     h('p', null, 'Next step: ', h('strong', null, step.label)),
     h('div', { class: 'card-actions' }, h('a', { class: 'btn', href: `#/topics?topic=${topic.id}` }, 'Go to topic')),

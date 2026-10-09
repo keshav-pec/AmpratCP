@@ -77,7 +77,7 @@ function weekCard(week, state, expanded) {
   chevron());
 
   const topicList = topics.length
-    ? h('ul', { class: 'week-topics' }, topics.map((t) => h('li', null,
+    ? h('ol', { class: 'week-topics', start: String(topics[0].number) }, topics.map((t) => h('li', null,
       h('a', { href: `#/topics?topic=${t.id}` }, t.title),
       h('span', { class: 'muted' }, ` ${t.chapter ? `Ch. ${t.chapter}` : 'Not in the book'} · ${stepsDone(state, t.id)} of ${STEPS.length}${t.optional ? ' · optional' : ''}`),
     )))

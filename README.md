@@ -14,8 +14,9 @@ streaks, so you move through it at your own pace. Each topic follows the same 5-
   week, the next step to work on, and links to the problem log.
 - **Plan:** the 8 weeks, each with its topics, a checklist and a status (Not started,
   In progress or Done). Every week is always open.
-- **Topics:** all 43 topics in plan order. Each has a one-line focus, step chips, links to
-  the handbook, visualizations and references, exact practice problems (CSES task ids and
+- **Topics:** all 43 topics, numbered 1 to 43 in plan order (each also shows its handbook
+  chapter). Each has a one-line focus, step chips, links to the handbook, visualizations and
+  references, exact practice problems (CSES task ids and
   Codeforces problem codes, 296 in total), and personal notes. Search matches problem names
   and ids too.
 - **Problem log:** problems you struggled with, what went wrong, the key idea you missed,
@@ -70,13 +71,22 @@ To deploy, push the folder to GitHub Pages as it is. All paths are relative, and
 uses the URL hash (`#/home`, `#/plan`, `#/topics`, `#/problems`), so no server
 configuration is needed. Sync is the only part that needs a server, and it's optional.
 
-## The handbook PDF
+## The handbook
 
-The "Handbook p. N" links open `./CP_book.pdf#page=N+10` in a new tab, because the PDF has
-10 pages of front matter before book page 1. This repository already contains
-`CP_book.pdf`. If you copy the app somewhere else, **copy `CP_book.pdf` into the project
-root** (next to `index.html`), or those links will not work. The book is free to download
-from <https://cses.fi/book/>.
+The "Handbook: chapter C, p. N" links open the built-in reader (`book.html`) in a new tab, at
+book page N. Plain PDF links (`CP_book.pdf#page=…`) are unreliable: phones and some browsers
+ignore the page and open the first page or download the file. The reader shows the PDF with
+[pdf.js](https://github.com/mozilla/pdf.js) (a copy is in `vendor/pdfjs/`, Apache-2.0), so it
+opens on the right page everywhere, including phones. It only draws the pages near the
+screen, lets you select and copy text, and has Previous, Next and a page box that uses the
+page numbers printed in the book. "PDF file" in its top bar opens the original file.
+
+Page numbers: the PDF has 10 pages of front matter, so book page N is PDF page N+10, and the
+reader's address uses the PDF page (`book.html#page=35` is book page 25).
+
+This repository already contains `CP_book.pdf`. If you copy the app somewhere else, **copy
+`CP_book.pdf` into the project root** (next to `index.html`), or the reader can't open it.
+The book is free to download from <https://cses.fi/book/>.
 
 ## Your data
 
@@ -186,8 +196,8 @@ Then open <http://localhost:8000/>. To try sync without a database, use
 In PowerShell, set variables first, for example `$env:SYNC_KEY = 'your-sync-key'`.
 `PORT` changes the port, and `ALLOWED_ORIGINS` works as on Vercel.
 
-The server only ever serves the app's own files (`index.html`, `styles.css`, `CP_book.pdf`
-and `src/`), never `.env`, `.git`, `node_modules` or the server code.
+The server only ever serves the app's own files (`index.html`, `book.html`, `styles.css`,
+`CP_book.pdf`, and the scripts in `src/` and `vendor/`), never `.env`, `.git`, `node_modules` or the server code.
 
 ## Tests
 
@@ -216,6 +226,7 @@ npm run check-links
 
 ```
 index.html            page shell
+book.html             the handbook reader
 styles.css            all styles (olive, gold and beige design tokens)
 src/main.js           router and boot
 src/data.js           static content: steps, topics, weeks
@@ -226,6 +237,8 @@ src/merge.js          three-way merge used by sync
 src/sync-ui.js        the Sync devices button, its status and its dialog
 src/ui.js             DOM helpers (text-only rendering), inline confirm, toast, notices
 src/views/*.js        home, plan, topics, problems
+src/book.js           the handbook reader: opens CP_book.pdf on the right page
+vendor/pdfjs/         pdf.js (legacy build, Apache-2.0), used by the reader
 api/state.js          the sync API as a Vercel function
 server/sync-handler.js  the sync API itself: key check, validation, conflicts
 server/storage.js     MongoDB (or in-memory) storage with revision checks
