@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Handbook · Balloon Room</title>
+  <meta name="description" content="Competitive Programmer's Handbook, opened on the page you need.">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#F7F2E4">
+  <script>
+    // Use the app's saved theme before the first paint, so nothing flickers.
+    (function () {
+      var theme = 'system';
+      try {
+        var saved = JSON.parse(localStorage.getItem('balloonroom:v1'));
+        if (saved && saved.prefs && saved.prefs.theme) theme = saved.prefs.theme;
+      } catch (e) { /* unreadable or blocked storage: follow the system */ }
+      if (theme !== 'light' && theme !== 'dark') {
+        theme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      }
+      document.documentElement.setAttribute('data-theme', theme);
+      if (theme === 'dark') document.querySelector('meta[name="theme-color"]').setAttribute('content', '#1B1C14');
+    })();
+  </script>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 58'%3E%3Cpath d='M20 38 C11 33 4 26 4 17 C4 8.2 11.2 2 20 2 C28.8 2 36 8.2 36 17 C36 26 29 33 20 38 Z' fill='%23D4AF37' stroke='%235A6B2E' stroke-width='3'/%3E%3Cpath d='M20 41 C17 46 23 51 20 57' fill='none' stroke='%235A6B2E' stroke-width='2'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=JetBrains+Mono:wght@400;500&family=Source+Sans+3:wght@400;600;700&display=swap">
+  <link rel="stylesheet" href="./styles.css">
+  <script type="module" src="./src/book.js"></script>
+</head>
+<body class="reader">
+  <a class="skip-link" href="#pages">Skip to the book</a>
+  <header class="reader-bar" id="reader-bar">
+    <a class="brand" href="./#/topics">Balloon Room</a>
+    <h1 class="reader-title">Competitive Programmer’s Handbook</h1>
+    <nav class="reader-nav" aria-label="Pages">
+      <button type="button" class="btn btn-small" id="reader-prev" disabled>Previous<span class="sr-only"> page</span></button>
+      <form class="reader-goto" id="reader-goto" novalidate>
+        <label for="reader-page">Page</label>
+        <input type="text" id="reader-page" name="reader-page" inputmode="numeric" autocomplete="off" aria-describedby="reader-total" disabled>
+        <span id="reader-total" class="muted">of 286</span>
+      </form>
+      <button type="button" class="btn btn-small" id="reader-next" disabled>Next<span class="sr-only"> page</span></button>
+    </nav>
+    <a class="reader-file" href="./CP_book.pdf" id="reader-file">PDF file</a>
+  </header>
+  <main class="reader-pages" id="pages" tabindex="-1" aria-label="Book pages">
+    <p class="reader-status" id="reader-status" role="status">Loading the handbook…</p>
+    <noscript><p class="reader-status">The reader needs JavaScript. <a href="./CP_book.pdf">Open the PDF file</a> instead.</p></noscript>
+  </main>
+</body>
+</html>

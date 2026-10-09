@@ -1,0 +1,19 @@
+{
+  "name": "balloon-room",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A personal, self-paced ICPC preparation tracker.",
+  "type": "module",
+  "scripts": {
+    "start": "python3 -m http.server 8000",
+    "serve": "node server/serve.js",
+    "test": "node --test",
+    "check-links": "node tools/check-links.js"
+  },
+  "dependencies": {
+    "mongodb": "^7.7.0"
+  },
+  "engines": {
+    "node": ">=20.19"
+  }
+}
