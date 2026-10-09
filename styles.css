@@ -237,7 +237,7 @@ h1[tabindex="-1"]:focus, h2[tabindex="-1"]:focus, h3[tabindex="-1"]:focus { outl
   flex-direction: column;
   gap: 0.5rem;
 }
-.theme-btn {
+.foot-btn {
   display: flex;
   align-items: center;
   gap: 0.625rem;
@@ -253,7 +253,7 @@ h1[tabindex="-1"]:focus, h2[tabindex="-1"]:focus, h3[tabindex="-1"]:focus { outl
   cursor: pointer;
 }
 @media (hover: hover) {
-  .theme-btn:hover { background: var(--surface-alt); }
+  .foot-btn:hover { background: var(--surface-alt); }
 }
 .theme-btn[aria-pressed="true"] { background: var(--olive-200); color: var(--olive-800); }
 @media (hover: hover) {
@@ -268,6 +268,27 @@ h1[tabindex="-1"]:focus, h2[tabindex="-1"]:focus, h3[tabindex="-1"]:focus { outl
   font-size: 0.875rem;
 }
 
+/* The dot on the cloud shows the sync state where the status text is hidden. The text,
+   and the button's accessible name, always say the same thing in words. */
+.sync-icon { position: relative; display: inline-flex; flex: none; }
+.sync-dot {
+  position: absolute;
+  right: -3px;
+  bottom: -2px;
+  width: 10px;
+  height: 10px;
+  border: 2px solid var(--bg);
+  border-radius: 50%;
+  background: var(--olive-600);
+}
+.sync-btn[data-state="off"] .sync-dot { display: none; }
+.sync-btn[data-state="syncing"] .sync-dot { background: var(--gold-600); }
+.sync-btn[data-state="offline"] .sync-dot { background: var(--muted); }
+.sync-btn[data-state="error"] .sync-dot { background: var(--danger); }
+@media (forced-colors: active) {
+  .sync-dot { background: CanvasText; border-color: Canvas; }
+}
+
 /* Collapsed sidebar: a narrow rail of icons. Labels stay available to screen readers. */
 @media (min-width: 820px) {
   :root[data-sidebar="collapsed"] .app { grid-template-columns: 72px minmax(0, 1fr); }
@@ -278,9 +299,9 @@ h1[tabindex="-1"]:focus, h2[tabindex="-1"]:focus, h3[tabindex="-1"]:focus { outl
   :root[data-sidebar="collapsed"] .sidebar-note { display: none; }
   :root[data-sidebar="collapsed"] .nav ul { margin-top: 1rem; }
   :root[data-sidebar="collapsed"] .nav a,
-  :root[data-sidebar="collapsed"] .theme-btn { justify-content: center; padding: 0.625rem; }
+  :root[data-sidebar="collapsed"] .foot-btn { justify-content: center; padding: 0.625rem; }
   :root[data-sidebar="collapsed"] .nav-label,
-  :root[data-sidebar="collapsed"] .theme-label {
+  :root[data-sidebar="collapsed"] .foot-label {
     position: absolute;
     width: 1px;
     height: 1px;
@@ -589,7 +610,7 @@ h1[tabindex="-1"]:focus, h2[tabindex="-1"]:focus, h3[tabindex="-1"]:focus { outl
 .filters .field:not(.field-search):not(.field-show) { flex: 0 1 18rem; }
 .field-show { flex: none; }
 
-input[type="text"], input[type="url"], input[type="search"], select, textarea {
+input[type="text"], input[type="url"], input[type="search"], input[type="password"], select, textarea {
   width: 100%;
   min-width: 0;
   min-height: 40px;
@@ -681,6 +702,7 @@ input[aria-invalid="true"] { border: 2px solid var(--danger); }
 .topic-title { flex: 1 1 14rem; min-width: 0; margin: 0; font-size: 1.125rem; }
 .topic-badges { display: inline-flex; flex-wrap: wrap; gap: 0.375rem; }
 .topic-count { color: var(--muted); font-size: 0.9375rem; white-space: nowrap; }
+.topic-focus { margin: -0.25rem 0 0; color: var(--muted); font-size: 0.9375rem; max-width: 75ch; }
 .topic.is-done .topic-count { color: var(--olive-600); font-weight: 600; }
 .chips { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 .topic-links {
@@ -752,6 +774,12 @@ input[aria-invalid="true"] { border: 2px solid var(--danger); }
   color: var(--ink);
 }
 .dialog::backdrop { background: rgb(46 42 30 / 0.45); }
+.sync-dialog { width: min(560px, calc(100vw - 2rem)); }
+.sync-dialog .field + .field { margin-top: 1rem; }
+.field-hint { margin: 0; color: var(--muted); font-size: 0.9375rem; }
+.sync-dialog .field-check { margin-top: 0.5rem; }
+.sync-status { font-weight: 600; }
+.sync-dialog .form-actions + .muted { margin-top: 1rem; }
 :root[data-theme="dark"] .dialog::backdrop { background: rgb(0 0 0 / 0.6); }
 
 /* ---------- notices and toast ---------- */
@@ -771,6 +799,7 @@ input[aria-invalid="true"] { border: 2px solid var(--danger); }
   background: var(--surface);
 }
 .notice p { margin: 0; flex: 1 1 20rem; }
+.notice-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 
 .toast {
   position: fixed;
@@ -809,10 +838,10 @@ input[aria-invalid="true"] { border: 2px solid var(--danger); }
   }
   .sidebar-top { grid-area: top; }
   .nav { grid-area: nav; }
-  .sidebar-foot { grid-area: foot; margin-top: 0; }
+  .sidebar-foot { grid-area: foot; margin-top: 0; flex-direction: row; gap: 0.25rem; }
   .collapse-btn, .nav-icon { display: none; }
-  .theme-btn { width: 40px; height: 40px; justify-content: center; padding: 0; }
-  .theme-label {
+  .foot-btn { width: 40px; height: 40px; justify-content: center; padding: 0; }
+  .foot-label {
     position: absolute;
     width: 1px;
     height: 1px;

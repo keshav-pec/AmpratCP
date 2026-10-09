@@ -98,13 +98,14 @@ function weekCard(week, state, expanded) {
     body);
 }
 
-export function mount(container, { store, params }) {
+export function mount(container, { store, params, restore }) {
   const state = store.get();
   const requested = Number(params.get('week'));
   const target = WEEKS.some((w) => w.n === requested) ? requested : null;
-  const open = target || currentWeek(state) || 1;
+  // After a re-draw, the same weeks stay open.
+  const open = restore ? new Set(restore.open) : new Set([target || currentWeek(state) || 1]);
 
-  const list = h('div', { class: 'weeks' }, WEEKS.map((w) => weekCard(w, state, w.n === open)));
+  const list = h('div', { class: 'weeks' }, WEEKS.map((w) => weekCard(w, state, open.has(w.n))));
 
   container.append(
     h('header', { class: 'page-head' },
@@ -137,6 +138,10 @@ export function mount(container, { store, params }) {
   list.addEventListener('click', onClick);
   list.addEventListener('change', onChange);
   return {
+    snapshot() {
+      const toggles = list.querySelectorAll('.week-toggle[aria-expanded="true"]');
+      return { open: [...toggles].map((t) => Number(t.closest('.week').dataset.week)) };
+    },
     unmount() {
       list.removeEventListener('click', onClick);
       list.removeEventListener('change', onChange);

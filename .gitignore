@@ -1,0 +1,11 @@
+# Dependencies for the optional sync server
+node_modules/
+
+# Secrets: the MongoDB connection string and sync key live here or in your host's settings,
+# never in the repository (it is public).
+.env
+.env.*
+!.env.example
+
+# Local deploy state
+.vercel/

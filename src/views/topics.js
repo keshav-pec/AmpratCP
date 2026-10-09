@@ -76,6 +76,7 @@ function topicRow(topic, state) {
         topic.optional ? h('span', { class: 'badge badge-optional' }, 'Optional') : null),
       h('span', { class: 'topic-count' }, h('span', { class: 'js-count' }, countText(state, topic.id)), srOnly(' steps done')),
     ),
+    h('p', { class: 'topic-focus' }, topic.focus),
     h('div', { class: 'chips', role: 'group', 'aria-label': `Steps for ${topic.title}` },
       STEPS.map((step) => h('button', {
         type: 'button', class: 'chip', 'aria-pressed': String(Boolean(progress[step.key])), dataset: { step: step.key },
@@ -109,9 +110,10 @@ function weekCountText(n, state) {
   return `${done} of ${topics.length * STEPS.length} steps`;
 }
 
-export function mount(container, { store, params }) {
+export function mount(container, { store, params, restore }) {
   const state = store.get();
-  const filter = { show: 'all', query: '' };
+  // After a re-draw, the same filter and the same open notes come back.
+  const filter = { show: restore ? restore.show : 'all', query: '' };
   const pendingNotes = new Map();
 
   const filterButtons = FILTERS.map((f) => h('button', {
@@ -126,7 +128,7 @@ export function mount(container, { store, params }) {
   container.append(
     h('header', { class: 'page-head' },
       h('h1', { tabindex: '-1' }, 'Topics'),
-      h('p', { class: 'lede' }, `${TOPICS.length} topics in plan order. For each one: read, visualize, code from memory, practise, revise.`),
+      h('p', { class: 'lede' }, `${TOPICS.length} topics in plan order. For each one: read, visualize, code from memory, practise, revise. Optional topics can wait until the core ones feel solid.`),
     ),
     h('div', { class: 'filters card' },
       h('div', { class: 'field field-show' },
@@ -214,6 +216,11 @@ export function mount(container, { store, params }) {
   container.addEventListener('input', onInput);
   container.addEventListener('focusout', onFocusOut);
 
+  if (restore) {
+    for (const details of sections.querySelectorAll('.notes')) {
+      details.open = restore.openNotes.includes(details.closest('.topic').dataset.topic);
+    }
+  }
   applyFilter();
 
   const target = params.get('topic');
@@ -225,6 +232,10 @@ export function mount(container, { store, params }) {
 
   return {
     flush,
+    snapshot() {
+      const open = [...sections.querySelectorAll('.notes[open]')].map((d) => d.closest('.topic').dataset.topic);
+      return { show: filter.show, openNotes: open };
+    },
     unmount() {
       flush();
       container.removeEventListener('click', onClick);

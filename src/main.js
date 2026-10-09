@@ -1,6 +1,8 @@
 // Router and boot.
 
 import { createStore, STORAGE_KEY, BACKUP_KEY, setTheme, setSidebar, resolveTheme } from './store.js';
+import { createSync, SYNC_STORAGE_KEY } from './sync.js';
+import { createSyncUi } from './sync-ui.js';
 import { showNotice, clearNotice, prefersReducedMotion } from './ui.js';
 import * as home from './views/home.js';
 import * as plan from './views/plan.js';
@@ -22,7 +24,11 @@ function getStorage() {
   }
 }
 
+let sync = null;
+
 function onSave(result) {
+  // Even when this browser couldn't save, the change can still reach the sync server.
+  if (sync) sync.schedule();
   if (result.ok) {
     clearNotice('save-error');
     return;
@@ -40,6 +46,20 @@ if (store.loadStatus === 'corrupt') {
 } else if (store.loadStatus === 'unavailable') {
   showNotice('load-unavailable', "This browser isn't letting Balloon Room use storage, so your progress won't be kept after you close the tab.");
 }
+
+// ---------- sync (optional, see the README) ----------
+
+let syncUi = null;
+sync = createSync({
+  store,
+  storage: getStorage(),
+  fetch: (url, options) => window.fetch(url, options),
+  pageUrl: document.baseURI,
+  isOnline: () => navigator.onLine !== false,
+  onStatus: (status) => { if (syncUi) syncUi.update(status); },
+  onRemoteChange: () => refreshView(),
+});
+syncUi = createSyncUi({ sync, button: document.getElementById('sync-toggle'), note: document.getElementById('sync-note') });
 
 // ---------- theme and sidebar ----------
 
@@ -69,6 +89,7 @@ function applySidebar() {
   }
   if (collapsed) themeToggle.title = 'Dark mode';
   else themeToggle.removeAttribute('title');
+  syncUi.setCollapsed(collapsed);
 }
 
 themeToggle.addEventListener('click', () => {
@@ -96,7 +117,9 @@ applySidebar();
 
 const viewRoot = document.getElementById('view');
 let current = null;
+let currentName = null;
 let firstRender = true;
+let refreshPending = false;
 
 function parseHash() {
   const raw = location.hash.slice(1);
@@ -109,7 +132,28 @@ function flushCurrent() {
   if (current && current.flush) current.flush();
 }
 
-// `refresh` re-draws the current page in place (after another tab saved): no focus move, same scroll.
+// Remembers which control has focus, so the same one gets it back after a re-draw.
+function describeFocus() {
+  const el = document.activeElement;
+  if (!el || el === viewRoot || !viewRoot.contains(el)) return null;
+  if (el.id) return { anchor: `#${CSS.escape(el.id)}` };
+  const anchor = el.parentElement.closest('[id], [data-id]');
+  if (!anchor || anchor === viewRoot || !viewRoot.contains(anchor)) {
+    return { anchor: null, tag: el.tagName, index: [...viewRoot.querySelectorAll(el.tagName)].indexOf(el) };
+  }
+  const selector = anchor.id ? `#${CSS.escape(anchor.id)}` : `[data-id="${CSS.escape(anchor.dataset.id)}"]`;
+  return { anchor: selector, tag: el.tagName, index: [...anchor.querySelectorAll(el.tagName)].indexOf(el) };
+}
+
+function restoreFocus(saved) {
+  if (!saved) return;
+  const anchor = saved.anchor ? viewRoot.querySelector(saved.anchor) : viewRoot;
+  const el = anchor && saved.tag ? anchor.querySelectorAll(saved.tag)[saved.index] : anchor;
+  if (el && el !== viewRoot) el.focus({ preventScroll: true });
+}
+
+// `refresh` re-draws the current page in place (after another tab or device saved): same scroll,
+// same focus, and the page keeps things like open weeks and filters.
 function render({ refresh = false } = {}) {
   let route = parseHash();
   if (!route || !ROUTES[route.name]) {
@@ -120,6 +164,11 @@ function render({ refresh = false } = {}) {
     }
     route = { name: 'home', params: new URLSearchParams() };
   }
+
+  const sameView = refresh && current && currentName === route.name;
+  const restore = sameView && current.snapshot ? current.snapshot() : null;
+  const focus = sameView ? describeFocus() : null;
+  refreshPending = false;
 
   if (current && current.unmount) current.unmount();
   const { title, view } = ROUTES[route.name];
@@ -132,10 +181,12 @@ function render({ refresh = false } = {}) {
 
   const scrollY = window.scrollY;
   viewRoot.replaceChildren();
-  current = view.mount(viewRoot, { store, params: route.params }) || null;
+  current = view.mount(viewRoot, { store, params: route.params, restore }) || null;
+  currentName = route.name;
 
   if (refresh) {
     window.scrollTo(0, scrollY);
+    restoreFocus(focus);
     return;
   }
 
@@ -154,10 +205,22 @@ function render({ refresh = false } = {}) {
 }
 
 window.addEventListener('hashchange', () => render());
-window.addEventListener('pagehide', flushCurrent);
+
+// Leaving the page: save notes being typed, and send anything waiting to the sync server.
+function leaving() {
+  flushCurrent();
+  sync.flush();
+}
+window.addEventListener('pagehide', leaving);
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'hidden') flushCurrent();
+  if (document.visibilityState === 'hidden') leaving();
+  else sync.pull();
 });
+window.addEventListener('focus', () => {
+  sync.pull();
+  if (refreshPending) refreshView();
+});
+window.addEventListener('online', () => sync.syncNow());
 
 // The skip link must not change the hash, or the router would treat it as a route.
 document.querySelector('.skip-link').addEventListener('click', (event) => {
@@ -165,25 +228,60 @@ document.querySelector('.skip-link').addEventListener('click', (event) => {
   document.getElementById('main').focus();
 });
 
-// True while the user is in the middle of something here: an open dialog, typed text, or
-// focus on a control in this (focused) window. A re-draw then would lose their place.
+const TEXT_ENTRY = 'input:not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]), textarea, select';
+
+// True while the user is in the middle of something: an open dialog, or typing (or about to)
+// in this window. A re-draw then would lose their place, so it waits.
 function isBusy() {
-  if (viewRoot.querySelector('dialog[open]')) return true;
+  if (document.querySelector('dialog[open]')) return true;
   const active = document.activeElement;
-  if (document.hasFocus() && active && active !== viewRoot && viewRoot.contains(active)) return true;
+  if (document.hasFocus() && active && viewRoot.contains(active) && active.matches(TEXT_ENTRY)) return true;
   return [...viewRoot.querySelectorAll('input[type="text"], input[type="url"], input[type="search"]')]
     .some((el) => el.value.trim() !== '');
 }
 
-// Another tab saved. Take its data first, so nothing here overwrites it, then save any
-// notes typed here and re-draw the page unless that would throw away what is being typed.
+// While a finger or mouse button is down, a re-draw could swallow the click, so it waits.
+let pointerDown = false;
+window.addEventListener('pointerdown', () => { pointerDown = true; }, true);
+window.addEventListener('pointercancel', () => { pointerDown = false; }, true);
+window.addEventListener('pointerup', () => {
+  pointerDown = false;
+  catchUp();
+}, true);
+
+// The data changed elsewhere (another tab or device). Save any notes typed here on top of it,
+// then re-draw the page, or do that as soon as the user is no longer busy.
+function refreshView() {
+  flushCurrent();
+  if (pointerDown || isBusy()) {
+    refreshPending = true;
+    return;
+  }
+  render({ refresh: true });
+}
+
+// A dialog closed, a text field lost focus or a click ended: catch up on a re-draw that waited.
+function catchUp() {
+  if (!refreshPending) return;
+  // Let the page finish what it's doing first (moving focus, handling the click).
+  setTimeout(() => {
+    if (refreshPending && !pointerDown && !isBusy()) render({ refresh: true });
+  }, 0);
+}
+document.addEventListener('close', catchUp, true);
+viewRoot.addEventListener('focusout', (event) => {
+  if (event.target.matches(TEXT_ENTRY)) catchUp();
+});
+
+// Another tab saved. Take its data first, so nothing here overwrites it.
 window.addEventListener('storage', (event) => {
+  if (event.key === null || event.key === SYNC_STORAGE_KEY) sync.configChanged();
   if (event.key !== null && event.key !== STORAGE_KEY) return;
   if (!store.reload()) return;
   applyTheme();
   applySidebar();
-  flushCurrent();
-  if (!isBusy()) render({ refresh: true });
+  refreshView();
 });
 
 render();
+sync.start();

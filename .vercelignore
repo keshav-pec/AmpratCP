@@ -1,0 +1,3 @@
+# Never upload local secret files with `vercel deploy`. Secrets belong in the project's settings.
+.env
+.env.*

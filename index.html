@@ -62,12 +62,19 @@
         </ul>
       </nav>
       <div class="sidebar-foot">
-        <button type="button" class="theme-btn" id="theme-toggle" aria-pressed="false">
+        <button type="button" class="foot-btn theme-btn" id="theme-toggle" aria-pressed="false">
           <svg class="icon icon-moon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M19.5 14.5 A7.5 7.5 0 1 1 9.5 4.5 A6 6 0 0 0 19.5 14.5 Z"/></svg>
           <svg class="icon icon-sun" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="4"/><path d="M12 2.5 V5 M12 19 V21.5 M2.5 12 H5 M19 12 H21.5 M5.3 5.3 L7 7 M17 17 L18.7 18.7 M5.3 18.7 L7 17 M17 7 L18.7 5.3"/></svg>
-          <span class="theme-label">Dark mode</span>
+          <span class="foot-label">Dark mode</span>
         </button>
-        <p class="sidebar-note">Saved in this browser only.</p>
+        <button type="button" class="foot-btn sync-btn" id="sync-toggle" aria-haspopup="dialog" data-state="off">
+          <span class="sync-icon" aria-hidden="true">
+            <svg class="icon" viewBox="0 0 24 24" focusable="false"><path d="M6.5 19 H17.5 A4 4 0 0 0 17.5 11 A5.5 5.5 0 0 0 6.5 11 A4 4 0 0 0 6.5 19 Z"/></svg>
+            <span class="sync-dot"></span>
+          </span>
+          <span class="foot-label">Sync devices</span>
+        </button>
+        <p class="sidebar-note" id="sync-note">Saved in this browser only.</p>
       </div>
     </header>
     <main id="main" class="main" tabindex="-1">

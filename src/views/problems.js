@@ -117,8 +117,11 @@ function problemRow(p, onDelete) {
   );
 }
 
-export function mount(container, { store, params }) {
-  const filter = { show: params.get('show') === 'revisit' ? 'revisit' : 'all', topicId: '', query: '' };
+export function mount(container, { store, params, restore }) {
+  // After a re-draw, the same filters come back.
+  const filter = restore
+    ? { show: restore.show, topicId: restore.topicId, query: '' }
+    : { show: params.get('show') === 'revisit' ? 'revisit' : 'all', topicId: '', query: '' };
 
   // ----- add form -----
   const addFields = problemFields('add');
@@ -149,7 +152,7 @@ export function mount(container, { store, params }) {
   ].map((f) => h('button', {
     type: 'button', class: 'chip chip-filter', 'aria-pressed': String(filter.show === f.id), dataset: { show: f.id },
   }, f.label));
-  const topicFilter = h('select', { id: 'problem-topic-filter', name: 'problem-topic-filter' }, topicOptions('', 'All topics'));
+  const topicFilter = h('select', { id: 'problem-topic-filter', name: 'problem-topic-filter' }, topicOptions(filter.topicId, 'All topics'));
   const search = h('input', { type: 'search', id: 'problem-search', name: 'problem-search', autocomplete: 'off' });
 
   const patterns = h('p', { class: 'patterns' });
@@ -310,6 +313,9 @@ export function mount(container, { store, params }) {
   renderList();
 
   return {
+    snapshot() {
+      return { show: filter.show, topicId: filter.topicId };
+    },
     unmount() {
       if (dialog.open) dialog.close();
     },

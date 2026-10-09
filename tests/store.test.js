@@ -36,9 +36,9 @@ function finishWeek(state, n) {
 }
 
 describe('static data', () => {
-  test('has 37 topics, 185 steps and exactly 8 weeks', () => {
-    assert.equal(TOPICS.length, 37);
-    assert.equal(TOTAL_STEPS, 185);
+  test('has 43 topics, 215 steps and exactly 8 weeks', () => {
+    assert.equal(TOPICS.length, 43);
+    assert.equal(TOTAL_STEPS, 215);
     assert.equal(WEEKS.length, 8);
     assert.deepEqual(WEEKS.map((w) => w.n), [1, 2, 3, 4, 5, 6, 7, 8]);
     assert.equal(topicsForWeek(8).length, 0);
@@ -87,9 +87,26 @@ describe('static data', () => {
     assert.deepEqual(weekPracticeCounts(8), { cses: 0, cf: 0 });
   });
 
-  test('only week 7 Edge topics are optional', () => {
+  test('Edge topics, and only Edge topics, are optional', () => {
     const optional = TOPICS.filter((t) => t.optional).map((t) => t.id);
-    assert.deepEqual(optional, ['g_hld', 'g_cen', 'g_cht', 'g_fft']);
+    assert.deepEqual(optional, ['g_sa', 'g_mcmf', 'g_hld', 'g_cen', 'g_cht', 'g_fft']);
+    assert.ok(TOPICS.every((t) => t.optional === (t.priority === 'Edge')));
+  });
+
+  test('every topic says what to master, and book topics have a chapter and page', () => {
+    for (const t of TOPICS) {
+      assert.ok(t.focus && t.focus.length > 20, `${t.id} has a focus line`);
+      assert.equal(t.chapter === null, t.page === null, `${t.id}: chapter and page go together`);
+    }
+  });
+
+  test('weeks run in dependency order: each topic comes after what it builds on', () => {
+    const weekOf = Object.fromEntries(TOPICS.map((t) => [t.id, t.week]));
+    const before = [
+      ['c9p', 'c9'], ['c5', 'c7'], ['c7', 'g_int'], ['c7', 'g_digit'], ['c10', 'g_xor'], ['c21', 'c22'], ['c22', 'c24'],
+      ['c12', 'c13'], ['c15', 'c14'], ['c9', 'c28'], ['c14', 'c18m'], ['c12', 'g_brg'], ['c18', 'g_hld'], ['c9', 'c27'],
+    ];
+    for (const [first, then] of before) assert.ok(weekOf[first] <= weekOf[then], `${first} before ${then}`);
   });
 });
 
@@ -176,31 +193,39 @@ describe('weeks', () => {
   test('week status goes not started → in progress → done', () => {
     let s = defaultState();
     s = setStep(s, 'c11', 'read', true);
-    assert.equal(weekStatus(s, 3), 'in-progress');
-    s = setWeekCheck(defaultState(), 3, 'contests', true);
-    assert.equal(weekStatus(s, 3), 'in-progress');
-    s = finishWeek(defaultState(), 3);
-    assert.equal(weekStatus(s, 3), 'done');
-    s = setWeekCheck(s, 3, 'contests', false);
-    assert.equal(weekStatus(s, 3), 'in-progress');
+    assert.equal(weekStatus(s, 4), 'in-progress');
+    s = setWeekCheck(defaultState(), 4, 'contests', true);
+    assert.equal(weekStatus(s, 4), 'in-progress');
+    s = finishWeek(defaultState(), 4);
+    assert.equal(weekStatus(s, 4), 'done');
+    s = setWeekCheck(s, 4, 'mock', false);
+    assert.equal(weekStatus(s, 4), 'in-progress');
   });
 
-  test('week 8 has its own four manual items', () => {
+  test('week 8 has its own manual items, including team practice', () => {
     let s = defaultState();
     const items = weekChecklist(s, 8);
-    assert.deepEqual(items.map((i) => i.id), ['virtuals', 'upsolve', 'clear', 'patterns']);
+    assert.deepEqual(items.map((i) => i.id), ['virtuals', 'team', 'upsolve', 'clear', 'patterns', 'routine']);
     assert.ok(items.every((i) => !i.derived));
     s = finishWeek(s, 8);
     assert.equal(weekStatus(s, 8), 'done');
   });
 
-  test('week 7 optional topics do not block the loop item', () => {
+  test('optional topics do not block the loop item', () => {
     let s = defaultState();
-    s = finishTopic(s, 'c29');
-    s = finishTopic(s, 'c30');
+    for (const id of ['c29', 'c30', 'c20', 'c23', 'c27']) s = finishTopic(s, id);
     const loop = weekChecklist(s, 7).find((i) => i.id === 'loop');
     assert.equal(loop.done, true);
     assert.match(loop.label, /isn't optional/);
+    assert.equal(weekChecklist(s, 4).find((i) => i.id === 'loop').label, 'Finish the 5-step loop for every topic');
+  });
+
+  test('checkpoint mock contests sit in weeks 4 and 6, and a stress test in week 1', () => {
+    const ids = (n) => weekChecklist(defaultState(), n).map((i) => i.id);
+    assert.ok(ids(4).includes('mock'));
+    assert.ok(ids(6).includes('mock'));
+    assert.ok(ids(1).includes('stress'));
+    assert.ok(!ids(2).includes('mock'));
   });
 
   test('current week is the first week whose checklist is not fully done', () => {
@@ -215,9 +240,9 @@ describe('weeks', () => {
 
   test('weekFill grows with the checklist', () => {
     let s = defaultState();
-    assert.equal(weekFill(s, 1), 0);
-    s = setWeekCheck(s, 1, 'practice', true);
-    assert.equal(weekFill(s, 1), 0.25);
+    assert.equal(weekFill(s, 2), 0);
+    s = setWeekCheck(s, 2, 'practice', true);
+    assert.equal(weekFill(s, 2), 0.25);
     s = finishWeek(s, 1);
     assert.equal(weekFill(s, 1), 1);
   });
@@ -362,7 +387,7 @@ describe('migration and persistence', () => {
     for (const raw of [undefined, null, 42, 'x', [], {}]) {
       const s = migrate(raw);
       assert.equal(s.version, SCHEMA_VERSION);
-      assert.equal(Object.keys(s.topics).length, 37);
+      assert.equal(Object.keys(s.topics).length, TOPICS.length);
       assert.deepEqual(s.weekChecks, {});
       assert.deepEqual(s.problems, []);
     }
@@ -381,10 +406,10 @@ describe('migration and persistence', () => {
       ],
     };
     const s = migrate(old);
-    assert.equal(s.version, 1);
+    assert.equal(s.version, 2);
     assert.deepEqual(s.topics.c1, { read: true, visual: false, code: false, practice: false, revise: false, notes: 'hi' });
     assert.equal(stepsDone(s, 'c2'), 0);
-    assert.equal(Object.keys(s.topics).length, 37);
+    assert.equal(Object.keys(s.topics).length, TOPICS.length);
     assert.deepEqual(s.weekChecks, { 1: { practice: true } });
     assert.equal(s.problems.length, 3);
     const kept = s.problems[0];
@@ -395,6 +420,30 @@ describe('migration and persistence', () => {
     assert.equal(kept.revisit, true);
     assert.ok(kept.id);
     assert.equal(new Set(s.problems.map((p) => p.id)).size, 3, 'ids are made unique');
+  });
+
+  test('migrate moves version 1 week checks to the week that now holds that theme', () => {
+    const v1 = {
+      version: 1,
+      weekChecks: {
+        1: { contests: true }, // foundations stays week 1
+        3: { practice: true }, // old graphs week is now week 4
+        4: { revisit: true }, // old trees week is now week 5
+        5: { contests: true }, // old maths week is now week 3
+        8: { virtuals: true, clear: true },
+      },
+    };
+    assert.deepEqual(migrate(v1).weekChecks, {
+      1: { contests: true },
+      3: { contests: true },
+      4: { practice: true },
+      5: { revisit: true },
+      8: { virtuals: true, clear: true },
+    });
+    // Topic progress is keyed by topic, so it moves with its topic automatically.
+    const withSteps = migrate({ version: 1, topics: { c9: { read: true } } });
+    assert.equal(withSteps.topics.c9.read, true);
+    assert.equal(TOPICS.find((t) => t.id === 'c9').week, 5);
   });
 
   test('migrate keeps a current state intact', () => {

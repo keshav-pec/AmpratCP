@@ -8,7 +8,7 @@ import {
 
 export const STORAGE_KEY = 'balloonroom:v1';
 export const BACKUP_KEY = 'balloonroom:v1:backup';
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 
 const STEP_KEYS = STEPS.map((s) => s.key);
 const RESULT_IDS = RESULTS.map((r) => r.id);
@@ -16,6 +16,8 @@ const MISTAKE_IDS = MISTAKES.map((m) => m.id);
 
 const isObject = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 const str = (v) => (typeof v === 'string' ? v : '');
+// Topic ids look like `c12` or `g_kmp`. Anything else (such as `__proto__`) is dropped when loading.
+const TOPIC_ID = /^[a-z][a-z0-9_]{0,39}$/i;
 
 export const THEMES = ['system', 'light', 'dark'];
 export const SIDEBAR_STATES = ['expanded', 'collapsed'];
@@ -69,24 +71,43 @@ function normalizeProblem(raw, index) {
   };
 }
 
+// In version 1 the weeks were: 1 foundations, 2 DP and range queries, 3 graphs, 4 trees and
+// flows, 5 maths, 6 strings, 7 geometry, 8 contests. Version 2 keeps each theme's checks
+// with the week that now holds that theme.
+const V1_TO_V2_WEEK = { 1: 1, 2: 2, 3: 4, 4: 5, 5: 3, 6: 6, 7: 7, 8: 8 };
+
+function remapWeeksFromV1(weekChecks) {
+  if (!isObject(weekChecks)) return weekChecks;
+  const out = {};
+  for (const [oldWeek, checks] of Object.entries(weekChecks)) {
+    const newWeek = V1_TO_V2_WEEK[oldWeek];
+    if (newWeek) out[newWeek] = checks;
+  }
+  return out;
+}
+
 // Brings any stored value (empty, unversioned, partial or current) up to the current schema.
 export function migrate(raw) {
   const state = defaultState();
   if (!isObject(raw)) return state;
 
   // Version 0 is anything saved without a `version` field. It used the same field
-  // names, so the normalisation below covers it; future versions add steps here.
+  // names as version 1, so both go through the same steps below.
   // `prefs` was added later within version 1; states without it get the defaults.
+  // Version 2 reordered the weeks, so older week checks move with their week's theme.
+  const version = Number.isInteger(raw.version) ? raw.version : 0;
+  const weekChecks = version < 2 ? remapWeeksFromV1(raw.weekChecks) : raw.weekChecks;
 
+  // Unknown but well-formed topic ids are kept, so progress saved by a newer version survives.
   if (isObject(raw.topics)) {
     for (const [id, value] of Object.entries(raw.topics)) {
-      state.topics[id] = normalizeTopic(value);
+      if (TOPIC_ID.test(id)) state.topics[id] = normalizeTopic(value);
     }
   }
 
-  if (isObject(raw.weekChecks)) {
+  if (isObject(weekChecks)) {
     for (const w of WEEKS) {
-      const checks = raw.weekChecks[w.n];
+      const checks = weekChecks[w.n];
       if (!isObject(checks)) continue;
       const clean = {};
       for (const item of w.checklist) {
@@ -113,6 +134,12 @@ export function migrate(raw) {
   }
 
   return state;
+}
+
+// The part of the state that sync shares between devices. Theme and sidebar stay per device.
+export function syncedData(state) {
+  const { prefs, ...data } = state; // eslint-disable-line no-unused-vars
+  return data;
 }
 
 // ---------- persistence ----------
@@ -244,7 +271,7 @@ export function topicMatches(state, topic, { show = 'all', query = '' } = {}) {
   const q = query.trim().toLowerCase();
   if (!q) return true;
   const problems = [...topic.practice.cses, ...topic.practice.cf].map(([id, name]) => `${id} ${name}`);
-  const haystack = [topic.title, topic.priority, topic.chapter ? `chapter ${topic.chapter}` : '', ...problems]
+  const haystack = [topic.title, topic.focus, topic.priority, topic.chapter ? `chapter ${topic.chapter}` : '', ...problems]
     .join(' ').toLowerCase();
   return q.split(/\s+/).every((word) => haystack.includes(word));
 }

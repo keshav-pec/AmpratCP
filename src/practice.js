@@ -14,7 +14,7 @@ export const PRACTICE = {
   ),
   c3: P(
     [[1621, 'Distinct Numbers'], [1084, 'Apartments'], [1090, 'Ferris Wheel'], [1620, 'Factory Machines']],
-    [['706B', 'Interesting drink'], ['474B', 'Worms'], ['1201C', 'Maximum Median']],
+    [['706B', 'Interesting drink'], ['474B', 'Worms'], ['1201C', 'Maximum Median'], ['1520F1', 'Guess the K-th Zero (Easy version)']],
   ),
   c4: P(
     [[1091, 'Concert Tickets'], [1163, 'Traffic Lights'], [1141, 'Playlist'], [1164, 'Room Allocation']],
@@ -25,25 +25,39 @@ export const PRACTICE = {
     [['550B', 'Preparing Olympiad'], ['1097B', 'Petr and a Combination Lock'], ['888E', 'Maximum Subsequence']],
   ),
   c6: P(
-    [[1629, 'Movie Festival'], [1074, 'Stick Lengths'], [2183, 'Missing Coin Sum'], [1630, 'Tasks and Deadlines']],
-    [['545C', 'Woodcutters'], ['489B', 'BerSU Ball'], ['1197C', 'Array Splitting']],
+    [[1629, 'Movie Festival'], [1074, 'Stick Lengths'], [2183, 'Missing Coin Sum'], [1092, 'Two Sets'], [2205, 'Gray Code']],
+    [['545C', 'Woodcutters'], ['1197C', 'Array Splitting'], ['1335D', 'Anti-Sudoku'], ['1352G', 'Special Permutation'],
+      ['1368B', 'Codeforces Subsequences']],
   ),
   c8: P(
-    [[1640, 'Sum of Two Values'], [1645, 'Nearest Smaller Values'], [2428, 'Distinct Values Subarrays II'], [1076, 'Sliding Window Median']],
+    [[1640, 'Sum of Two Values'], [1660, 'Subarray Sums I'], [1645, 'Nearest Smaller Values'], [2428, 'Distinct Values Subarrays II'],
+      [1076, 'Sliding Window Median']],
     [['279B', 'Books'], ['547B', 'Mike and Feet'], ['602B', 'Approximating a Constant Range']],
   ),
   c7: P(
-    [[1633, 'Dice Combinations'], [1634, 'Minimizing Coins'], [1158, 'Book Shop'], [1639, 'Edit Distance'],
-      [1145, 'Increasing Subsequence'], [1097, 'Removal Game'], [2220, 'Counting Numbers']],
-    [['455A', 'Boredom'], ['189A', 'Cut Ribbon'], ['1195C', 'Basketball Exercise'], ['607B', 'Zuma']],
+    [[1633, 'Dice Combinations'], [1634, 'Minimizing Coins'], [1635, 'Coin Combinations I'], [1158, 'Book Shop'],
+      [1639, 'Edit Distance'], [1145, 'Increasing Subsequence']],
+    [['455A', 'Boredom'], ['189A', 'Cut Ribbon'], ['1195C', 'Basketball Exercise']],
+  ),
+  g_int: P(
+    [[1097, 'Removal Game'], [1744, 'Rectangle Cutting']],
+    [['607B', 'Zuma'], ['1114D', 'Flood Fill'], ['1132F', 'Clear the String']],
+  ),
+  g_digit: P(
+    [[2220, 'Counting Numbers']],
+    [['1036C', 'Classy Numbers'], ['1073E', 'Segment Sum'], ['914C', 'Travelling Salesman and Special Numbers']],
+  ),
+  c9p: P(
+    [[1646, 'Static Range Sum Queries'], [1652, 'Forest Queries'], [1661, 'Subarray Sums II'], [1662, 'Subarray Divisibility']],
+    [['433B', "Kuriyama Mirai's Stones"], ['816B', 'Karen and Coffee'], ['1398C', 'Good Subarrays']],
   ),
   c9: P(
-    [[1646, 'Static Range Sum Queries'], [1647, 'Static Range Minimum Queries'], [1648, 'Dynamic Range Sum Queries'],
-      [1649, 'Dynamic Range Minimum Queries'], [1143, 'Hotel Queries']],
+    [[1647, 'Static Range Minimum Queries'], [1648, 'Dynamic Range Sum Queries'], [1649, 'Dynamic Range Minimum Queries'],
+      [1651, 'Range Update Queries'], [1143, 'Hotel Queries'], [1144, 'Salary Queries']],
     [['339D', 'Xenia and Bit Operations'], ['61E', 'Enemy is weak'], ['380C', 'Sereja and Brackets']],
   ),
   c10: P(
-    [[1653, 'Elevator Rides'], [2181, 'Counting Tilings'], [1690, 'Hamiltonian Flights']],
+    [[1655, 'Maximum Xor Subarray'], [1653, 'Elevator Rides'], [2181, 'Counting Tilings'], [1690, 'Hamiltonian Flights']],
     [['579A', 'Raising Bacteria'], ['580D', 'Kefa and Dishes'], ['16E', 'Fish'], ['165E', 'Compatible Numbers']],
   ),
   c11: P(
@@ -75,9 +89,17 @@ export const PRACTICE = {
     [[1687, 'Company Queries I'], [1688, 'Company Queries II'], [1135, 'Distance Queries'], [1137, 'Subtree Queries'], [1138, 'Path Queries']],
     [['1328E', 'Tree Queries'], ['191C', 'Fools and Roads'], ['620E', 'New Year Tree']],
   ),
+  c18m: P(
+    [[1139, 'Distinct Colors']],
+    [['600E', 'Lomsat gelral'], ['570D', 'Tree Requests'], ['208E', 'Blood Cousins']],
+  ),
   c17: P(
     [[1682, 'Flight Routes Check'], [1683, 'Planets and Kingdoms'], [1686, 'Coin Collector'], [1684, 'Giant Pizza']],
     [['427C', 'Checkposts'], ['776D', 'The Door Problem'], ['228E', 'The Road to Berland is Paved With Good Intentions']],
+  ),
+  g_brg: P(
+    [[2076, 'Necessary Roads'], [2077, 'Necessary Cities']],
+    [['118E', 'Bertown roads'], ['1000E', 'We Need More Bosses'], ['732F', 'Tourist Reform']],
   ),
   c19: P(
     [[1691, 'Mail Delivery'], [1693, 'Teleporters Path'], [1692, 'De Bruijn Sequence']],
@@ -112,8 +134,14 @@ export const PRACTICE = {
     [[1729, 'Stick Game'], [1730, 'Nim Game I'], [1098, 'Nim Game II'], [1099, 'Stair Game'], [2207, "Grundy's Game"]],
     [['1194D', '1-2-K Game'], ['768E', 'Game of Stones'], ['603C', 'Lieges of Legendre']],
   ),
+  g_xor: P(
+    [[3191, 'Maximum Xor Subset']],
+    [['1101G', '(Zero XOR Subset)-less'], ['959F', 'Mahmoud and Ehab and yet another xor task'], ['895C', 'Square Subsets'],
+      ['1100F', 'Ivan and Burgers']],
+  ),
   c26: P(
-    [[1731, 'Word Combinations'], [1733, 'Finding Periods'], [1110, 'Minimal Rotation'], [2420, 'Palindrome Queries']],
+    [[1731, 'Word Combinations'], [1733, 'Finding Periods'], [1110, 'Minimal Rotation'], [1111, 'Longest Palindrome'],
+      [2420, 'Palindrome Queries']],
     [['126B', 'Password'], ['271D', 'Good Substrings'], ['706D', "Vasiliy's Multiset"]],
   ),
   g_kmp: P(

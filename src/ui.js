@@ -97,10 +97,11 @@ export function toast(message) {
 }
 
 // Persistent message for problems the user must know about (saving failed, data reset).
-export function showNotice(id, message) {
+// `action` ({ label, onClick }) adds a button that fixes the problem.
+export function showNotice(id, message, action = null) {
   const area = document.getElementById('notices');
   if (!area) return;
-  let notice = document.getElementById(id);
+  let notice = area.querySelector(`#${CSS.escape(id)}`);
   if (!notice) {
     notice = h('div', { class: 'notice', id, role: 'alert' });
     area.append(notice);
@@ -115,11 +116,13 @@ export function showNotice(id, message) {
       if (main) main.focus();
     },
   }, 'Dismiss');
-  notice.replaceChildren(h('p', null, message), dismiss);
+  const fix = action ? h('button', { type: 'button', class: 'btn', onclick: action.onClick }, action.label) : null;
+  notice.replaceChildren(h('p', null, message), h('div', { class: 'notice-actions' }, fix, dismiss));
 }
 
 export function clearNotice(id) {
-  const notice = document.getElementById(id);
+  const area = document.getElementById('notices');
+  const notice = area && area.querySelector(`#${CSS.escape(id)}`);
   if (notice) notice.remove();
 }
 
