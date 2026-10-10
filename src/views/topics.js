@@ -128,7 +128,7 @@ export function mount(container, { store, params, restore }) {
   container.append(
     h('header', { class: 'page-head' },
       h('h1', { tabindex: '-1' }, 'Topics'),
-      h('p', { class: 'lede' }, `${TOPICS.length} topics in plan order. For each one: read, visualize, code from memory, practise, revise. Optional topics can wait until the core ones feel solid.`),
+      h('p', { class: 'lede' }, `${TOPICS.length} topics in plan order. For each one: read and visualize it, then code it from memory and practise. Problems that gave you trouble go in the problem log for revision. Optional topics can wait until the core ones feel solid.`),
     ),
     h('div', { class: 'filters card' },
       h('div', { class: 'field field-show' },

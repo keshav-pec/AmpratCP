@@ -185,7 +185,7 @@ describe('server helpers', () => {
     assert.equal(Object.getPrototypeOf(data.topics), Object.prototype);
     assert.equal(Object.hasOwn(data.topics, '__proto__'), false);
     assert.equal('$bad' in data.topics || 'a.b' in data.topics, false);
-    assert.deepEqual(data.topics.c2, { read: true, visual: false, code: false, practice: false, revise: false, notes: '' });
+    assert.deepEqual(data.topics.c2, { read: false, practice: false, notes: '' });
     assert.deepEqual(data.weekChecks, { 1: { practice: true } });
     assert.equal(data.problems[0].url, '');
     assert.equal('extra' in data.problems[0], false);

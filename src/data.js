@@ -1,14 +1,12 @@
-// Static content: the five-step loop, the topics and the 8-week plan.
+// Static content: the two-step loop, the topics and the 8-week plan.
 // Nothing in here is ever written to storage.
 
 import { PRACTICE } from './practice.js';
 
+// Revision isn't a step: the problem log's "to revisit" list covers it.
 export const STEPS = [
-  { key: 'read', label: 'Read' },
-  { key: 'visual', label: 'Visualize' },
-  { key: 'code', label: 'Code from memory' },
-  { key: 'practice', label: 'Practice' },
-  { key: 'revise', label: 'Revise' },
+  { key: 'read', label: 'Read and visualize' },
+  { key: 'practice', label: 'Code and practice' },
 ];
 
 export const PRIORITIES = ['Core', 'Common', 'Edge'];
