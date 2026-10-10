@@ -18,10 +18,10 @@ test('deepEqual compares JSON values, ignoring key order', () => {
 test('keeps changes made on either side', () => {
   const base = empty();
   const local = syncedData(setStep(full(base), 'c1', 'read', true));
-  const remote = syncedData(setStep(full(base), 'c2', 'code', true));
+  const remote = syncedData(setStep(full(base), 'c2', 'practice', true));
   const merged = merge3(base, local, remote);
   assert.equal(merged.topics.c1.read, true);
-  assert.equal(merged.topics.c2.code, true);
+  assert.equal(merged.topics.c2.practice, true);
   assert.deepEqual(merge3(base, local, base), local);
   assert.deepEqual(merge3(base, base, remote), remote);
 });
@@ -29,10 +29,10 @@ test('keeps changes made on either side', () => {
 test('when both changed the same step, this device wins', () => {
   const base = syncedData(setStep(full(empty()), 'c1', 'read', true));
   const local = syncedData(setStep(full(base), 'c1', 'read', false));
-  const remote = syncedData(setStep(full(base), 'c1', 'visual', true));
+  const remote = syncedData(setStep(full(base), 'c1', 'practice', true));
   const merged = merge3(base, local, remote);
   assert.equal(merged.topics.c1.read, false);
-  assert.equal(merged.topics.c1.visual, true);
+  assert.equal(merged.topics.c1.practice, true);
 });
 
 test('keeps both versions of a note edited on two devices', () => {

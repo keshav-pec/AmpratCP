@@ -5,12 +5,14 @@ A calm, personal tracker for self-paced ICPC preparation, built around Antti Laa
 preparing for the ICPC Asia Kanpur regional.
 
 The plan has exactly 8 weeks ("Week 1" to "Week 8"). It has no dates, deadlines, timers or
-streaks, so you move through it at your own pace. Each topic follows the same 5-step loop:
-**read**, **visualize**, **code from memory**, **practice**, **revise**.
+streaks, so you move through it at your own pace. Each topic has the same two steps:
+**read and visualize**, then **code and practice** (code it from memory, then solve the practice
+problems). There is no separate revise step: problems that gave you trouble go in the problem
+log, and re-solving the ones marked to revisit is the revision.
 
 ## Pages
 
-- **Home:** overall progress (out of 215 topic steps), the 8-week balloon strip, the current
+- **Home:** overall progress (out of 86 topic steps), the 8-week balloon strip, the current
   week, the next step to work on, and links to the problem log.
 - **Plan:** the 8 weeks, each with its topics, a checklist and a status (Not started,
   In progress or Done). Every week is always open.

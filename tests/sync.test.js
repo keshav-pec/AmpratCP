@@ -124,7 +124,7 @@ describe('sync between two devices', () => {
     await laptop.sync.connect({ server: '', key: KEY });
     await phone.sync.connect({ server: '', key: KEY });
 
-    laptop.commit(setStep(laptop.store.get(), 'c2', 'code', true));
+    laptop.commit(setStep(laptop.store.get(), 'c2', 'read', true));
     laptop.commit(setStep(laptop.store.get(), 'c2', 'practice', true));
     assert.equal(laptop.sync.status().state, 'syncing');
     assert.deepEqual(laptop.timers.delays(), [SEND_DELAY], 'quick changes share one send');
@@ -214,13 +214,13 @@ describe('sync between two devices', () => {
     assert.deepEqual(laptop.sync.status(), { state: 'error', error: 'auth', server: '' });
     assert.equal(laptop.timers.count(), 0, 'no retries with a refused key');
     const calls = backend.calls.length;
-    laptop.commit(setStep(laptop.store.get(), 'c8', 'code', true));
+    laptop.commit(setStep(laptop.store.get(), 'c8', 'practice', true));
     await laptop.sync.syncNow();
     assert.equal(backend.calls.length, calls, 'the refused key is not sent again');
 
     assert.deepEqual(await laptop.sync.connect({ server: '', key: KEY }), { ok: true });
     assert.equal(laptop.sync.status().state, 'synced');
-    assert.equal((await serverCopy()).data.topics.c8.code, true);
+    assert.equal((await serverCopy()).data.topics.c8.practice, true);
   });
 
   test('when offline it waits and retries, without losing changes', async () => {
@@ -264,12 +264,12 @@ describe('sync between two devices', () => {
     const laptop = device();
     laptop.commit(setStep(laptop.store.get(), 'c11', 'read', true));
     await laptop.sync.connect({ server: '', key: KEY });
-    laptop.commit(setStep(laptop.store.get(), 'c11', 'code', true));
+    laptop.commit(setStep(laptop.store.get(), 'c11', 'practice', true));
     laptop.sync.disconnect();
     assert.deepEqual(laptop.sync.status(), { state: 'off' });
     assert.equal(laptop.storage.getItem(SYNC_STORAGE_KEY), null);
     assert.equal(laptop.timers.count(), 0);
-    assert.equal(laptop.store.get().topics.c11.code, true);
+    assert.equal(laptop.store.get().topics.c11.practice, true);
     const calls = backend.calls.length;
     await laptop.sync.syncNow();
     laptop.sync.pull();

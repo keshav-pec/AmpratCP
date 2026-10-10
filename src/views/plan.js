@@ -44,7 +44,7 @@ function derivedItem(item) {
     h('div', { class: 'check-text' },
       h('span', null, item.label),
       srOnly(item.done ? ' (done)' : ' (not done yet)'),
-      h('span', { class: 'check-hint muted' }, `${done} of ${total} steps. This ticks itself when every topic has ${STEPS.length} of ${STEPS.length} steps.`),
+      h('span', { class: 'check-hint muted' }, `${done} of ${total} steps. This ticks itself when every topic has both steps done.`),
     ),
   );
 }

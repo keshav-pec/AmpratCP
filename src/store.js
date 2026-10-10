@@ -8,7 +8,7 @@ import {
 
 export const STORAGE_KEY = 'balloonroom:v1';
 export const BACKUP_KEY = 'balloonroom:v1:backup';
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
 
 const STEP_KEYS = STEPS.map((s) => s.key);
 const RESULT_IDS = RESULTS.map((r) => r.id);
@@ -27,7 +27,7 @@ function defaultPrefs() {
 }
 
 function emptyTopic() {
-  return { read: false, visual: false, code: false, practice: false, revise: false, notes: '' };
+  return { read: false, practice: false, notes: '' };
 }
 
 export function defaultState() {
@@ -42,10 +42,21 @@ export function defaultState() {
 
 // ---------- migration ----------
 
-function normalizeTopic(raw) {
+// Before version 3 a topic had five steps. Read and visualize became one step, code from
+// memory and practice became another, and revise was dropped. A merged step counts as done
+// only when both of its old steps were.
+function mergeStepsFromV2(raw) {
+  return {
+    read: raw.read === true && raw.visual === true,
+    practice: raw.code === true && raw.practice === true,
+  };
+}
+
+function normalizeTopic(raw, version) {
   const out = emptyTopic();
   if (!isObject(raw)) return out;
-  for (const key of STEP_KEYS) out[key] = raw[key] === true;
+  const steps = version < 3 ? mergeStepsFromV2(raw) : raw;
+  for (const key of STEP_KEYS) out[key] = steps[key] === true;
   out.notes = str(raw.notes);
   return out;
 }
@@ -95,13 +106,14 @@ export function migrate(raw) {
   // names as version 1, so both go through the same steps below.
   // `prefs` was added later within version 1; states without it get the defaults.
   // Version 2 reordered the weeks, so older week checks move with their week's theme.
+  // Version 3 merged the five topic steps into two.
   const version = Number.isInteger(raw.version) ? raw.version : 0;
   const weekChecks = version < 2 ? remapWeeksFromV1(raw.weekChecks) : raw.weekChecks;
 
   // Unknown but well-formed topic ids are kept, so progress saved by a newer version survives.
   if (isObject(raw.topics)) {
     for (const [id, value] of Object.entries(raw.topics)) {
-      if (TOPIC_ID.test(id)) state.topics[id] = normalizeTopic(value);
+      if (TOPIC_ID.test(id)) state.topics[id] = normalizeTopic(value, version);
     }
   }
 
@@ -299,7 +311,7 @@ export function setWeekCheck(state, weekNumber, checkId, value) {
   return { ...state, weekChecks };
 }
 
-// Progress of the derived "finish the 5-step loop" item. Optional topics don't count towards it.
+// Progress of the derived "finish both steps" item. Optional topics don't count towards it.
 export function loopProgress(state, weekNumber) {
   const required = topicsForWeek(weekNumber).filter((t) => !t.optional);
   const total = required.length * STEP_KEYS.length;
@@ -319,8 +331,8 @@ export function weekChecklist(state, weekNumber) {
     return {
       ...item,
       label: hasOptional
-        ? "Finish the 5-step loop for every topic that isn't optional"
-        : 'Finish the 5-step loop for every topic',
+        ? "Finish both steps for every topic that isn't optional"
+        : 'Finish both steps for every topic',
       done: p.total > 0 && p.done === p.total,
       progress: p,
     };

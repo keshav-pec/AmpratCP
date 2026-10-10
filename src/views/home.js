@@ -72,7 +72,7 @@ function continueCard(state) {
     h('h2', { id: 'home-continue-title', class: 'card-label' }, 'Continue learning'));
   const next = nextTopic(state);
   if (!next) {
-    card.append(h('p', null, `Every topic has ${STEPS.length} of ${STEPS.length} steps. Well done.`));
+    card.append(h('p', null, 'Every topic has both steps done. Well done.'));
     return card;
   }
   const { topic, step } = next;

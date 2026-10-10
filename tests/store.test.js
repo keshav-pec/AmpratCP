@@ -36,9 +36,9 @@ function finishWeek(state, n) {
 }
 
 describe('static data', () => {
-  test('has 43 topics, 215 steps and exactly 8 weeks', () => {
+  test('has 43 topics, 86 steps and exactly 8 weeks', () => {
     assert.equal(TOPICS.length, 43);
-    assert.equal(TOTAL_STEPS, 215);
+    assert.equal(TOTAL_STEPS, 86);
     assert.equal(WEEKS.length, 8);
     assert.deepEqual(WEEKS.map((w) => w.n), [1, 2, 3, 4, 5, 6, 7, 8]);
     assert.equal(topicsForWeek(8).length, 0);
@@ -128,16 +128,16 @@ describe('topic steps', () => {
     assert.equal(toggleStep(s0, 'c1', 'nope'), s0);
   });
 
-  test('a topic is done at 5 of 5 steps and counts towards the total', () => {
+  test('a topic is done at 2 of 2 steps and counts towards the total', () => {
     const s = finishTopic(defaultState(), 'c1');
     assert.equal(isTopicDone(s, 'c1'), true);
-    assert.equal(totalStepsDone(s), 5);
+    assert.equal(totalStepsDone(s), 2);
   });
 
   test('setNotes keeps step progress and returns the same state when unchanged', () => {
-    const s1 = setNotes(toggleStep(defaultState(), 'c7', 'code'), 'c7', 'dp[i] = ...');
+    const s1 = setNotes(toggleStep(defaultState(), 'c7', 'practice'), 'c7', 'dp[i] = ...');
     assert.equal(s1.topics.c7.notes, 'dp[i] = ...');
-    assert.equal(s1.topics.c7.code, true);
+    assert.equal(s1.topics.c7.practice, true);
     assert.equal(setNotes(s1, 'c7', 'dp[i] = ...'), s1);
   });
 
@@ -148,7 +148,7 @@ describe('topic steps', () => {
     s = finishTopic(s, 'c1');
     s = setStep(s, 'c2', 'read', true);
     assert.equal(nextTopic(s).topic.id, 'c2');
-    assert.equal(nextTopic(s).step.key, 'visual');
+    assert.equal(nextTopic(s).step.key, 'practice');
     for (const t of TOPICS) s = finishTopic(s, t.id);
     assert.equal(nextTopic(s), null);
   });
@@ -178,10 +178,10 @@ describe('weeks', () => {
     let s = defaultState();
     const loop = () => weekChecklist(s, 1).find((i) => i.id === 'loop');
     assert.equal(loop().done, false);
-    assert.equal(loop().progress.total, 35);
+    assert.equal(loop().progress.total, 14);
     for (const t of topicsForWeek(1)) s = finishTopic(s, t.id);
     assert.equal(loop().done, true);
-    assert.equal(loop().progress.done, 35);
+    assert.equal(loop().progress.done, 14);
   });
 
   test('the derived loop item cannot be set by hand', () => {
@@ -217,7 +217,7 @@ describe('weeks', () => {
     const loop = weekChecklist(s, 7).find((i) => i.id === 'loop');
     assert.equal(loop.done, true);
     assert.match(loop.label, /isn't optional/);
-    assert.equal(weekChecklist(s, 4).find((i) => i.id === 'loop').label, 'Finish the 5-step loop for every topic');
+    assert.equal(weekChecklist(s, 4).find((i) => i.id === 'loop').label, 'Finish both steps for every topic');
   });
 
   test('checkpoint mock contests sit in weeks 4 and 6, and a stress test in week 1', () => {
@@ -406,8 +406,8 @@ describe('migration and persistence', () => {
       ],
     };
     const s = migrate(old);
-    assert.equal(s.version, 2);
-    assert.deepEqual(s.topics.c1, { read: true, visual: false, code: false, practice: false, revise: false, notes: 'hi' });
+    assert.equal(s.version, SCHEMA_VERSION);
+    assert.deepEqual(s.topics.c1, { read: false, practice: false, notes: 'hi' });
     assert.equal(stepsDone(s, 'c2'), 0);
     assert.equal(Object.keys(s.topics).length, TOPICS.length);
     assert.deepEqual(s.weekChecks, { 1: { practice: true } });
@@ -441,9 +441,24 @@ describe('migration and persistence', () => {
       8: { virtuals: true, clear: true },
     });
     // Topic progress is keyed by topic, so it moves with its topic automatically.
-    const withSteps = migrate({ version: 1, topics: { c9: { read: true } } });
+    const withSteps = migrate({ version: 1, topics: { c9: { read: true, visual: true } } });
     assert.equal(withSteps.topics.c9.read, true);
     assert.equal(TOPICS.find((t) => t.id === 'c9').week, 5);
+  });
+
+  test('migrate merges the five version 2 steps into two', () => {
+    const s = migrate({
+      version: 2,
+      topics: {
+        c1: { read: true, visual: true, code: true, practice: true, revise: true },
+        c2: { read: true, visual: false, code: true, practice: false, revise: true },
+        c3: { visual: true, practice: true, notes: 'kept' },
+      },
+    });
+    assert.deepEqual(s.topics.c1, { read: true, practice: true, notes: '' });
+    assert.deepEqual(s.topics.c2, { read: false, practice: false, notes: '' });
+    assert.deepEqual(s.topics.c3, { read: false, practice: false, notes: 'kept' });
+    assert.equal(isTopicDone(s, 'c1'), true);
   });
 
   test('migrate keeps a current state intact', () => {
