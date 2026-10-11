@@ -17,10 +17,12 @@ log, and re-solving the ones marked to revisit is the revision.
 - **Plan:** the 8 weeks, each with its topics, a checklist and a status (Not started,
   In progress or Done). Every week is always open.
 - **Topics:** all 43 topics, numbered 1 to 43 in plan order (each also shows its handbook
-  chapter). Each has a one-line focus, step chips, links to the handbook, visualizations and
-  references, exact practice problems (CSES task ids and
-  Codeforces problem codes, 304 in total), and personal notes. Search matches problem names
-  and ids too.
+  chapter). Each has a one-line focus, step chips, links to the handbook and a reference,
+  visualizations (interactive pages such as VisuAlgo, USFCA and Red Blob Games, plus videos
+  from creators who teach the topic well, such as William Fiset, Reducible, Errichto and
+  Abdul Bari), exact practice problems in a collapsible list (CSES task ids and Codeforces
+  problem codes, 304 in total), and personal notes. Search matches problem names and ids too,
+  and opens the practice list of the topics it finds.
 - **Problem log:** problems you struggled with, what went wrong, the key idea you missed,
   and whether to revisit them. A "Mistake patterns" line counts your most common mistakes.
 

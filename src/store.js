@@ -276,16 +276,26 @@ export function nextTopic(state) {
 }
 
 // Filter for the Topics page. `show` is 'all', 'open' (not finished) or 'done'.
+const searchWords = (query) => query.trim().toLowerCase().split(/\s+/).filter(Boolean);
+const problemText = (topic) => [...topic.practice.cses, ...topic.practice.cf].map(([id, name]) => `${id} ${name}`).join(' ');
+
 export function topicMatches(state, topic, { show = 'all', query = '' } = {}) {
   const done = isTopicDone(state, topic.id);
   if (show === 'open' && done) return false;
   if (show === 'done' && !done) return false;
-  const q = query.trim().toLowerCase();
-  if (!q) return true;
-  const problems = [...topic.practice.cses, ...topic.practice.cf].map(([id, name]) => `${id} ${name}`);
-  const haystack = [topic.title, topic.focus, topic.priority, topic.chapter ? `chapter ${topic.chapter}` : '', ...problems]
+  const words = searchWords(query);
+  if (!words.length) return true;
+  const haystack = [topic.title, topic.focus, topic.priority, topic.chapter ? `chapter ${topic.chapter}` : '', problemText(topic)]
     .join(' ').toLowerCase();
-  return q.split(/\s+/).every((word) => haystack.includes(word));
+  return words.every((word) => haystack.includes(word));
+}
+
+// True when the search is about one of the topic's practice problems (every word is in them).
+export function practiceMatches(topic, query) {
+  const words = searchWords(query);
+  if (!words.length) return false;
+  const haystack = problemText(topic).toLowerCase();
+  return words.every((word) => haystack.includes(word));
 }
 
 // Every CSES and Codeforces problem listed for a week's topics.

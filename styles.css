@@ -715,15 +715,16 @@ input[aria-invalid="true"] { border: 2px solid var(--danger); }
   gap: 0.25rem 1.25rem;
   font-size: 0.9375rem;
 }
-.practice { display: grid; gap: 0.375rem; font-size: 0.9375rem; }
-.practice-row {
+/* A labelled row of links: the visualizations, and each site's practice problems. */
+.link-row {
   display: grid;
   grid-template-columns: 6.25rem minmax(0, 1fr);
   gap: 0.25rem 0.75rem;
   align-items: baseline;
+  font-size: 0.9375rem;
 }
-.practice-site { color: var(--muted); font-weight: 600; font-size: 0.875rem; }
-.practice-list {
+.link-row-label { color: var(--muted); font-weight: 600; font-size: 0.875rem; }
+.link-row-list {
   list-style: none;
   margin: 0;
   padding: 0;
@@ -731,8 +732,12 @@ input[aria-invalid="true"] { border: 2px solid var(--danger); }
   flex-wrap: wrap;
   gap: 0.25rem 1rem;
 }
+.play-icon { width: 0.75em; height: 0.75em; margin-right: 0.3em; fill: currentColor; vertical-align: -0.02em; }
 .pid { font-family: var(--font-mono); font-size: 0.8125rem; font-weight: 500; }
+.practice-body { display: grid; gap: 0.375rem; margin-top: 0.5rem; }
+.summary-count { color: var(--muted); font-weight: 400; font-size: 0.875rem; }
 
+.practice summary,
 .notes summary {
   width: fit-content;
   color: var(--olive-800);
@@ -978,7 +983,7 @@ input[aria-invalid="true"] { border: 2px solid var(--danger); }
   .filters { padding: 0.875rem 1rem; }
   .balloons { gap: 0.125rem; }
   .balloon-label { padding: 0 0.375rem; }
-  .practice-row { grid-template-columns: minmax(0, 1fr); }
+  .link-row { grid-template-columns: minmax(0, 1fr); }
 }
 
 @media (prefers-reduced-motion: reduce) {

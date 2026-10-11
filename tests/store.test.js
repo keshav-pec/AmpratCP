@@ -6,7 +6,7 @@ import { PRACTICE, csesUrl, codeforcesUrl } from '../src/practice.js';
 import {
   STORAGE_KEY, BACKUP_KEY, SCHEMA_VERSION, TOTAL_STEPS,
   defaultState, migrate, load, save, createStore,
-  toggleStep, setStep, setNotes, stepsDone, isTopicDone, totalStepsDone, nextTopic, topicMatches,
+  toggleStep, setStep, setNotes, stepsDone, isTopicDone, totalStepsDone, nextTopic, topicMatches, practiceMatches,
   setWeekCheck, weekChecklist, weekStatus, weekFill, currentWeek,
   validateProblem, addProblem, updateProblem, deleteProblem, markResolved,
   filterProblems, sortedProblems, revisitCount, mistakePatterns, isHttpUrl, defaultRevisit,
@@ -48,7 +48,7 @@ describe('static data', () => {
   test('topic ids are unique and every URL is https', () => {
     assert.equal(new Set(TOPICS.map((t) => t.id)).size, TOPICS.length);
     for (const t of TOPICS) {
-      for (const url of [t.visualize, t.reference]) if (url) assert.ok(url.startsWith('https://'), url);
+      for (const url of [t.reference, ...t.visuals.map((v) => v.url)]) if (url) assert.ok(url.startsWith('https://'), url);
     }
   });
 
@@ -164,6 +164,23 @@ describe('topic steps', () => {
     assert.equal(topicMatches(s, c3, { query: 'graph' }), false);
     assert.equal(topicMatches(s, c3, { query: 'ferris wheel' }), true, 'matches practice problem names');
     assert.equal(topicMatches(s, c3, { query: '1201c' }), true, 'matches problem ids');
+  });
+
+  test('practiceMatches is true only when the search is about a practice problem', () => {
+    const c3 = TOPICS.find((t) => t.id === 'c3');
+    assert.equal(practiceMatches(c3, 'ferris wheel'), true);
+    assert.equal(practiceMatches(c3, '1201c'), true);
+    assert.equal(practiceMatches(c3, 'binary search'), false, 'words from the title only');
+    assert.equal(practiceMatches(c3, '  '), false);
+  });
+
+  test('every topic has a visuals list, and the links in it are unique', () => {
+    for (const t of TOPICS) {
+      assert.ok(Array.isArray(t.visuals), t.id);
+      const urls = t.visuals.map((v) => v.url);
+      assert.equal(new Set(urls).size, urls.length, `${t.id} lists a link twice`);
+      for (const v of t.visuals) assert.ok(v.label && typeof v.video === 'boolean', `${t.id}: ${v.url}`);
+    }
   });
 });
 

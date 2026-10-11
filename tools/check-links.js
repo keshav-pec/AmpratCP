@@ -1,12 +1,12 @@
-// Checks every external link in src/data.js and src/practice.js with a real HTTP request.
+// Checks every external link in src/data.js, src/practice.js and src/visuals.js with a real HTTP request.
 // Run from the project root: node tools/check-links.js   (Node 18 or newer)
 
 import { TOPICS, WEEKS, GYM_URL } from '../src/data.js';
 import { csesUrl, codeforcesUrl } from '../src/practice.js';
 
-const urls = new Set([GYM_URL, 'https://www.youtube.com/results?search_query=greedy+algorithms+algorithm+visualization']);
+const urls = new Set([GYM_URL]);
 for (const t of TOPICS) {
-  if (t.visualize) urls.add(t.visualize);
+  for (const v of t.visuals) urls.add(v.url);
   if (t.reference) urls.add(t.reference);
   for (const [id] of t.practice.cses) urls.add(csesUrl(id));
   for (const [code] of t.practice.cf) urls.add(codeforcesUrl(code));

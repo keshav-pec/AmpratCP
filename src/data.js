@@ -2,6 +2,7 @@
 // Nothing in here is ever written to storage.
 
 import { PRACTICE } from './practice.js';
+import { VISUALS } from './visuals.js';
 
 // Revision isn't a step: the problem log's "to revisit" list covers it.
 export const STEPS = [
@@ -30,13 +31,14 @@ export const INDIA_CONTESTS_URL = 'https://codeforces.com/blog/entry/105000';
 
 // `focus` says what to master; `chapter` and `page` are null for topics that are not in the book.
 // Edge topics are optional: they never block a week's checklist.
-function topic(id, week, priority, title, focus, { chapter = null, page = null, visualize = null, reference = null } = {}) {
+function topic(id, week, priority, title, focus, { chapter = null, page = null, reference = null } = {}) {
   const practice = PRACTICE[id];
   if (!practice) throw new Error(`No practice problems for topic ${id}`);
-  return { id, title, focus, chapter, page, week, priority, visualize, reference, practice, optional: priority === 'Edge' };
+  const visuals = VISUALS[id];
+  if (!visuals) throw new Error(`No visuals list for topic ${id}`);
+  return { id, title, focus, chapter, page, week, priority, reference, visuals, practice, optional: priority === 'Edge' };
 }
 
-const VISUALGO = (name) => `https://visualgo.net/en/${name}`;
 const CPA = (path) => `https://cp-algorithms.com/${path}.html`;
 
 // Plan order. Weeks follow what ICPC Asia regionals ask most, and each week builds on the ones before.
@@ -50,10 +52,10 @@ export const TOPICS = [
     { chapter: 2, page: 17 }),
   topic('c3', 1, 'Core', 'Sorting and binary search, including on the answer',
     'Custom comparators, lower_bound and upper_bound, binary search on the answer with a monotone check, ternary search, and interactive binary search.',
-    { chapter: 3, page: 25, visualize: VISUALGO('sorting'), reference: CPA('num_methods/binary_search') }),
+    { chapter: 3, page: 25, reference: CPA('num_methods/binary_search') }),
   topic('c4', 1, 'Core', 'Data structures (STL)',
     'Choosing between vector, deque, set, multiset, map, priority_queue and bitset, plus the policy-based ordered set.',
-    { chapter: 4, page: 35, visualize: VISUALGO('bst') }),
+    { chapter: 4, page: 35 }),
   topic('c9p', 1, 'Core', 'Prefix sums and difference arrays',
     '1D and 2D prefix sums, prefix XOR, difference arrays for range updates, and counting subarrays with a hash map of prefix values.',
     { chapter: 9, page: 84, reference: 'https://usaco.guide/silver/prefix-sums' }),
@@ -67,19 +69,19 @@ export const TOPICS = [
   // Week 2: from brute force to DP, the most common hard-problem tool.
   topic('c5', 2, 'Core', 'Complete search and meet in the middle',
     'Generating subsets and permutations, backtracking with pruning, and splitting a search over 2ⁿ options into two halves.',
-    { chapter: 5, page: 47, visualize: VISUALGO('recursion') }),
+    { chapter: 5, page: 47 }),
   topic('c7', 2, 'Core', 'Dynamic programming',
     'Designing states and transitions: coin problems, knapsack, LIS in O(n log n), edit distance, grid paths, and counting modulo a prime.',
-    { chapter: 7, page: 65, visualize: VISUALGO('recursion'), reference: 'https://usaco.guide/gold/intro-dp' }),
+    { chapter: 7, page: 65, reference: 'https://usaco.guide/gold/intro-dp' }),
   topic('g_int', 2, 'Common', 'Interval DP',
     'DP over ranges [l, r] built from smaller ranges: removal games, merging, and deleting or recolouring segments.',
-    { visualize: VISUALGO('recursion'), reference: 'https://usaco.guide/gold/dp-ranges' }),
+    { reference: 'https://usaco.guide/gold/dp-ranges' }),
   topic('g_digit', 2, 'Common', 'Digit DP',
     'Counting numbers in [L, R] by placing digits from the most significant one while tracking whether the prefix is still tight.',
-    { visualize: VISUALGO('recursion'), reference: 'https://usaco.guide/gold/digit-dp' }),
+    { reference: 'https://usaco.guide/gold/digit-dp' }),
   topic('c10', 2, 'Core', 'Bit manipulation and bitmask DP',
     'Bit tricks and XOR properties, DP over subsets of up to about 20 items, and sum over subsets (SOS) DP.',
-    { chapter: 10, page: 95, visualize: VISUALGO('bitmask'), reference: CPA('algebra/bit-manipulation') }),
+    { chapter: 10, page: 95, reference: CPA('algebra/bit-manipulation') }),
 
   // Week 3: maths appears in most Indian regional sets, and later counting problems need it.
   topic('c21', 3, 'Core', 'Number theory',
@@ -101,27 +103,27 @@ export const TOPICS = [
   // Week 4: graph search and shortest paths.
   topic('c11', 4, 'Core', 'Basics of graphs',
     'Adjacency lists, edge lists and grids as graphs; degrees, paths, connectivity and trees.',
-    { chapter: 11, page: 109, visualize: VISUALGO('graphds') }),
+    { chapter: 11, page: 109 }),
   topic('c12', 4, 'Core', 'DFS and BFS',
     'Connected components, cycle detection, bipartite checks, multi-source BFS and BFS on grids.',
-    { chapter: 12, page: 117, visualize: VISUALGO('dfsbfs'), reference: CPA('graph/breadth-first-search') }),
+    { chapter: 12, page: 117, reference: CPA('graph/breadth-first-search') }),
   topic('c13', 4, 'Core', 'Shortest paths',
     'Dijkstra with a priority queue, 0-1 BFS, Bellman–Ford and negative cycles, Floyd–Warshall, and shortest paths over state graphs.',
-    { chapter: 13, page: 123, visualize: VISUALGO('sssp'), reference: CPA('graph/dijkstra') }),
+    { chapter: 13, page: 123, reference: CPA('graph/dijkstra') }),
   topic('c15', 4, 'Core', 'Spanning trees and union-find',
     'Union-find with path compression and union by size, Kruskal’s algorithm, and answering connectivity questions offline.',
-    { chapter: 15, page: 141, visualize: VISUALGO('mst'), reference: CPA('data_structures/disjoint_set_union') }),
+    { chapter: 15, page: 141, reference: CPA('data_structures/disjoint_set_union') }),
   topic('c16', 4, 'Core', 'Directed graphs: toposort, DAG DP, successors',
     'Topological order with Kahn’s algorithm or DFS, DP over a DAG, cycle finding, and successor graphs with binary lifting.',
-    { chapter: 16, page: 149, visualize: VISUALGO('dfsbfs'), reference: CPA('graph/topological-sort') }),
+    { chapter: 16, page: 149, reference: CPA('graph/topological-sort') }),
 
   // Week 5: trees and the data structures that answer queries on them.
   topic('c9', 5, 'Core', 'Range queries: Fenwick and segment tree',
     'Sparse table for static minimums, the Fenwick tree, a segment tree with point updates, and coordinate compression.',
-    { chapter: 9, page: 86, visualize: VISUALGO('segmenttree'), reference: CPA('data_structures/segment_tree') }),
+    { chapter: 9, page: 86, reference: CPA('data_structures/segment_tree') }),
   topic('c28', 5, 'Core', 'Lazy propagation and segment tree variants',
     'Range updates with lazy propagation, nodes that store merged information (such as the best subarray), and persistent segment trees.',
-    { chapter: 28, page: 257, visualize: VISUALGO('segmenttree'), reference: CPA('data_structures/segment_tree') }),
+    { chapter: 28, page: 257, reference: CPA('data_structures/segment_tree') }),
   topic('c14', 5, 'Core', 'Tree algorithms: subtree DP, diameter, rerooting',
     'Subtree sizes and DP on subtrees, the diameter of a tree, and rerooting to get an answer for every possible root.',
     { chapter: 14, page: 133 }),
@@ -141,13 +143,13 @@ export const TOPICS = [
     { reference: CPA('string/prefix-function') }),
   topic('g_sa', 6, 'Edge', 'Suffix array and LCP',
     'Building a suffix array in O(n log n), the LCP array, and counting or ordering distinct substrings.',
-    { visualize: VISUALGO('suffixarray'), reference: CPA('string/suffix-array') }),
+    { reference: CPA('string/suffix-array') }),
   topic('c17', 6, 'Common', 'Strong connectivity and 2-SAT',
     'Kosaraju’s or Tarjan’s algorithm, the condensation DAG, and 2-SAT through an implication graph.',
-    { chapter: 17, page: 157, visualize: VISUALGO('dfsbfs'), reference: CPA('graph/strongly-connected-components') }),
+    { chapter: 17, page: 157, reference: CPA('graph/strongly-connected-components') }),
   topic('g_brg', 6, 'Common', 'Bridges and articulation points',
     'Low-link values in a DFS tree to find bridges and cut vertices, and the bridge tree of 2-edge-connected components.',
-    { visualize: VISUALGO('dfsbfs'), reference: CPA('graph/bridge-searching') }),
+    { reference: CPA('graph/bridge-searching') }),
   topic('c19', 6, 'Common', 'Eulerian paths and De Bruijn sequences',
     'When an Eulerian path or circuit exists, and Hierholzer’s algorithm for directed and undirected graphs.',
     { chapter: 19, page: 173, reference: CPA('graph/euler_path') }),
@@ -155,13 +157,13 @@ export const TOPICS = [
   // Week 7: less frequent topics. Edge topics here are optional; do them if time allows.
   topic('c29', 7, 'Common', 'Geometry primitives',
     'Points with integer coordinates, cross products and orientation, segment intersection, polygon area, and floating-point care.',
-    { chapter: 29, page: 265, visualize: VISUALGO('polygon'), reference: CPA('geometry/area-of-simple-polygon') }),
+    { chapter: 29, page: 265, reference: CPA('geometry/area-of-simple-polygon') }),
   topic('c30', 7, 'Common', 'Sweep line, closest pair, convex hull',
     'Event-based sweeps, the closest pair of points in O(n log n), and the monotone chain convex hull.',
-    { chapter: 30, page: 275, visualize: VISUALGO('convexhull'), reference: CPA('geometry/convex-hull') }),
+    { chapter: 30, page: 275, reference: CPA('geometry/convex-hull') }),
   topic('c20', 7, 'Common', 'Flows, cuts and matchings (learn Dinic too)',
     'Maximum flow with Dinic’s algorithm, minimum cuts, and bipartite matching with Kuhn’s algorithm or Hopcroft–Karp.',
-    { chapter: 20, page: 181, visualize: VISUALGO('maxflow'), reference: CPA('graph/dinic') }),
+    { chapter: 20, page: 181, reference: CPA('graph/dinic') }),
   topic('c23', 7, 'Common', 'Matrices and linear recurrences',
     'Matrix multiplication and fast exponentiation for linear recurrences and for counting walks of length k.',
     { chapter: 23, page: 217, reference: CPA('algebra/binary-exp') }),
