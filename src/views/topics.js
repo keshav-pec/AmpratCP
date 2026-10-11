@@ -37,16 +37,29 @@ function playIcon() {
     svg('path', { d: 'M5 3.5 L12.5 8 L5 12.5 Z' }));
 }
 
-// Interactive pages first, then videos (marked with a play icon).
-function visualsRow(topic) {
-  if (!topic.visuals.length) return null;
-  const ordered = [...topic.visuals.filter((v) => !v.video), ...topic.visuals.filter((v) => v.video)];
+function visualRow(name, topic, visuals) {
+  if (!visuals.length) return null;
   return h('div', { class: 'link-row' },
-    h('span', { class: 'link-row-label', 'aria-hidden': 'true' }, 'Visualize'),
-    h('ul', { class: 'link-row-list', 'aria-label': `Visualizations for ${topic.title}` },
-      ordered.map((v) => h('li', null, v.video
-        ? externalLink(v.url, playIcon(), v.label, srOnly(' (video)'))
+    h('span', { class: 'link-row-label', 'aria-hidden': 'true' }, name),
+    h('ul', { class: 'link-row-list', 'aria-label': `${name} for ${topic.title}` },
+      visuals.map((v) => h('li', null, v.video
+        ? externalLink(v.url, playIcon(), v.label)
         : externalLink(v.url, v.label)))),
+  );
+}
+
+// Interactive pages in one row, videos (marked with a play icon) in the next.
+function visualsList(topic) {
+  if (!topic.visuals.length) return null;
+  const pages = topic.visuals.filter((v) => !v.video);
+  const videos = topic.visuals.filter((v) => v.video);
+  const counts = [pages.length && `${pages.length} interactive`, videos.length && plural(videos.length, 'video')]
+    .filter(Boolean).join(' · ');
+  return h('details', { class: 'fold visuals' },
+    h('summary', null, 'Visualize', h('span', { class: 'summary-count' }, ` ${counts}`)),
+    h('div', { class: 'fold-body' },
+      visualRow('Interactive', topic, pages),
+      visualRow('Videos', topic, videos)),
   );
 }
 
@@ -61,10 +74,10 @@ function practiceRow(site, topic, problems, toUrl) {
 
 function practiceProblems(topic) {
   const { cses, cf } = topic.practice;
-  return h('details', { class: 'practice' },
+  return h('details', { class: 'fold practice' },
     h('summary', null, 'Practice problems',
       h('span', { class: 'summary-count' }, ` ${cses.length} CSES · ${cf.length} Codeforces`)),
-    h('div', { class: 'practice-body' },
+    h('div', { class: 'fold-body' },
       practiceRow('CSES', topic, cses, csesUrl),
       practiceRow('Codeforces', topic, cf, codeforcesUrl)),
   );
@@ -99,7 +112,7 @@ function topicRow(topic, state) {
       }, tick(), step.label)),
     ),
     topicLinks(topic),
-    visualsRow(topic),
+    visualsList(topic),
     practiceProblems(topic),
     h('details', { class: 'notes', open: Boolean(progress.notes) },
       h('summary', null, 'Notes'),
@@ -254,6 +267,9 @@ export function mount(container, { store, params, restore }) {
     for (const details of sections.querySelectorAll('.practice')) {
       details.open = restore.openPractice.includes(details.closest('.topic').dataset.topic);
     }
+    for (const details of sections.querySelectorAll('.visuals')) {
+      details.open = restore.openVisuals.includes(details.closest('.topic').dataset.topic);
+    }
   }
   applyFilter();
 
@@ -268,7 +284,7 @@ export function mount(container, { store, params, restore }) {
     flush,
     snapshot() {
       const openIn = (selector) => [...sections.querySelectorAll(`${selector}[open]`)].map((d) => d.closest('.topic').dataset.topic);
-      return { show: filter.show, openNotes: openIn('.notes'), openPractice: openIn('.practice') };
+      return { show: filter.show, openNotes: openIn('.notes'), openPractice: openIn('.practice'), openVisuals: openIn('.visuals') };
     },
     unmount() {
       flush();
