@@ -238,13 +238,35 @@ describe('weeks', () => {
     assert.equal(currentWeek(s), null);
   });
 
-  test('weekFill grows with the checklist', () => {
+  test('weekFill grows a part per finished topic, half a part per step', () => {
     let s = defaultState();
+    const parts = topicsForWeek(2).length;
     assert.equal(weekFill(s, 2), 0);
     s = setWeekCheck(s, 2, 'practice', true);
-    assert.equal(weekFill(s, 2), 0.25);
-    s = finishWeek(s, 1);
-    assert.equal(weekFill(s, 1), 1);
+    assert.equal(weekFill(s, 2), 0, 'the checklist alone does not fill a week with topics');
+    s = setStep(s, 'c5', 'read', true);
+    assert.equal(weekFill(s, 2), 0.5 / parts);
+    s = finishTopic(s, 'c5');
+    assert.equal(weekFill(s, 2), 1 / parts);
+    for (const t of topicsForWeek(2)) s = finishTopic(s, t.id);
+    assert.equal(weekFill(s, 2), 1);
+  });
+
+  test('optional topics do not count towards the fill', () => {
+    let s = defaultState();
+    for (const t of topicsForWeek(7).filter((x) => x.optional)) s = finishTopic(s, t.id);
+    assert.equal(weekFill(s, 7), 0);
+    for (const t of topicsForWeek(7).filter((x) => !x.optional)) s = finishTopic(s, t.id);
+    assert.equal(weekFill(s, 7), 1);
+  });
+
+  test('week 8 has no topics, so its balloon fills with its checklist', () => {
+    let s = defaultState();
+    const items = WEEKS[7].checklist.length;
+    s = setWeekCheck(s, 8, 'virtuals', true);
+    assert.equal(weekFill(s, 8), 1 / items);
+    s = finishWeek(s, 8);
+    assert.equal(weekFill(s, 8), 1);
   });
 });
 

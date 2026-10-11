@@ -114,7 +114,7 @@ export function mount(container, { store }) {
       h('p', { class: 'progress-line' }, h('strong', null, String(done)), ` of ${TOTAL_STEPS} topic steps done`),
       progressBar(done / TOTAL_STEPS),
       balloonStrip(state, current),
-      h('p', { class: 'muted small' }, 'Each balloon is a week. It fills as that week’s checklist gets done.'),
+      h('p', { class: 'muted small' }, 'Each balloon is a week. It fills a part for every topic you finish in that week (half a part per step). Week 8 has no topics, so it fills with its checklist.'),
     ),
 
     h('div', { class: 'grid-2' }, currentWeekCard(state, current), continueCard(state)),

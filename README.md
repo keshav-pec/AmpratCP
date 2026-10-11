@@ -19,7 +19,7 @@ log, and re-solving the ones marked to revisit is the revision.
 - **Topics:** all 43 topics, numbered 1 to 43 in plan order (each also shows its handbook
   chapter). Each has a one-line focus, step chips, links to the handbook, visualizations and
   references, exact practice problems (CSES task ids and
-  Codeforces problem codes, 296 in total), and personal notes. Search matches problem names
+  Codeforces problem codes, 304 in total), and personal notes. Search matches problem names
   and ids too.
 - **Problem log:** problems you struggled with, what went wrong, the key idea you missed,
   and whether to revisit them. A "Mistake patterns" line counts your most common mistakes.
@@ -234,7 +234,7 @@ throwaway databases):
 MONGODB_TEST_URI=mongodb://127.0.0.1:27017 npm test
 ```
 
-To check that every external link still works (including all 296 practice problems),
+To check that every external link still works (including all 304 practice problems),
 run this from a machine with internet access:
 
 ```sh

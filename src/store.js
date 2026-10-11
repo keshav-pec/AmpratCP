@@ -350,15 +350,15 @@ export function weekStatus(state, weekNumber) {
 
 export const STATUS_LABELS = { 'not-started': 'Not started', 'in-progress': 'In progress', done: 'Done' };
 
-// 0..1, how full the week's balloon is. The loop item counts in proportion to its steps.
+// 0..1, how full the week's balloon is. Each of the week's topics fills an equal part, half
+// of it per step; optional topics don't count, as they never block the week. Week 8 has no
+// topics, so its balloon fills with its checklist instead.
 export function weekFill(state, weekNumber) {
+  const { done, total } = loopProgress(state, weekNumber);
+  if (total) return done / total;
   const items = weekChecklist(state, weekNumber);
   if (!items.length) return 0;
-  const sum = items.reduce((n, i) => {
-    if (i.derived) return n + (i.progress.total ? i.progress.done / i.progress.total : 0);
-    return n + (i.done ? 1 : 0);
-  }, 0);
-  return sum / items.length;
+  return items.filter((i) => i.done).length / items.length;
 }
 
 // The first week whose checklist isn't fully done, or null when all 8 are done.
