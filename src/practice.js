@@ -14,10 +14,12 @@ export const PRACTICE = {
   ),
   c3: P(
     [[1621, 'Distinct Numbers'], [1084, 'Apartments'], [1090, 'Ferris Wheel'], [1620, 'Factory Machines']],
-    [['706B', 'Interesting drink'], ['474B', 'Worms'], ['1201C', 'Maximum Median'], ['1520F1', 'Guess the K-th Zero (Easy version)']],
+    [['706B', 'Interesting drink'], ['474B', 'Worms'], ['1201C', 'Maximum Median'], ['1520F1', 'Guess the K-th Zero (Easy version)'],
+      ['578C', 'Weakness and Poorness']],
   ),
   c4: P(
-    [[1091, 'Concert Tickets'], [1163, 'Traffic Lights'], [1141, 'Playlist'], [1164, 'Room Allocation']],
+    [[1091, 'Concert Tickets'], [1163, 'Traffic Lights'], [1141, 'Playlist'], [1164, 'Room Allocation'],
+      [1076, 'Sliding Window Median'], [2162, 'Josephus Problem II']],
     [['4C', 'Registration system'], ['368B', 'Sereja and Suffixes'], ['1526C2', 'Potions (Hard Version)']],
   ),
   c5: P(
@@ -31,16 +33,16 @@ export const PRACTICE = {
   ),
   c8: P(
     [[1640, 'Sum of Two Values'], [1660, 'Subarray Sums I'], [1645, 'Nearest Smaller Values'], [2428, 'Distinct Values Subarrays II'],
-      [1076, 'Sliding Window Median']],
+      [3221, 'Sliding Window Minimum']],
     [['279B', 'Books'], ['547B', 'Mike and Feet'], ['602B', 'Approximating a Constant Range']],
   ),
   c7: P(
     [[1633, 'Dice Combinations'], [1634, 'Minimizing Coins'], [1635, 'Coin Combinations I'], [1158, 'Book Shop'],
-      [1639, 'Edit Distance'], [1145, 'Increasing Subsequence']],
+      [1639, 'Edit Distance'], [1744, 'Rectangle Cutting'], [1145, 'Increasing Subsequence']],
     [['455A', 'Boredom'], ['189A', 'Cut Ribbon'], ['1195C', 'Basketball Exercise']],
   ),
   g_int: P(
-    [[1097, 'Removal Game'], [1744, 'Rectangle Cutting']],
+    [[1097, 'Removal Game']],
     [['607B', 'Zuma'], ['1114D', 'Flood Fill'], ['1132F', 'Clear the String']],
   ),
   g_digit: P(
@@ -106,7 +108,7 @@ export const PRACTICE = {
     [['508D', 'Tanya and Password'], ['723E', 'One-Way Reform'], ['1361C', "Johnny and Megan's Necklace"]],
   ),
   c20: P(
-    [[1694, 'Download Speed'], [1696, 'School Dance'], [1711, 'Distinct Routes']],
+    [[1694, 'Download Speed'], [1695, 'Police Chase'], [1696, 'School Dance'], [1711, 'Distinct Routes']],
     [['653D', 'Delivery Bears'], ['498C', 'Array and Operations'], ['1139E', 'Maximize Mex']],
   ),
   g_mcmf: P(
@@ -115,11 +117,11 @@ export const PRACTICE = {
   ),
   c21: P(
     [[1712, 'Exponentiation II'], [1713, 'Counting Divisors'], [1081, 'Common Divisors'], [2182, 'Divisor Analysis'], [2185, 'Prime Multiples']],
-    [['230B', 'T-primes'], ['26A', 'Almost Prime'], ['1366D', 'Two Divisors']],
+    [['230B', 'T-primes'], ['26A', 'Almost Prime'], ['1366D', 'Two Divisors'], ['7C', 'Line'], ['1295D', 'Same GCDs']],
   ),
   c22: P(
     [[1079, 'Binomial Coefficients'], [1715, 'Creating Strings II'], [1716, 'Distributing Apples'], [1717, 'Christmas Party'],
-      [2064, 'Bracket Sequences I']],
+      [2064, 'Bracket Sequences I'], [2209, 'Counting Necklaces']],
     [['300C', 'Beautiful Numbers'], ['1288C', 'Two Arrays'], ['1312D', 'Count the Arrays']],
   ),
   c23: P(
@@ -128,7 +130,8 @@ export const PRACTICE = {
   ),
   c24: P(
     [[1725, 'Dice Probability'], [1726, 'Moving Robots'], [1727, 'Candy Lottery'], [1728, 'Inversion Probability']],
-    [['148D', 'Bag of mice'], ['518D', 'Ilya and Escalator'], ['453A', 'Little Pony and Expected Maximum'], ['280C', 'Game on Tree']],
+    [['148D', 'Bag of mice'], ['518D', 'Ilya and Escalator'], ['453A', 'Little Pony and Expected Maximum'], ['280C', 'Game on Tree'],
+      ['1265E', 'Beautiful Mirrors']],
   ),
   c25: P(
     [[1729, 'Stick Game'], [1730, 'Nim Game I'], [1098, 'Nim Game II'], [1099, 'Stair Game'], [2207, "Grundy's Game"]],

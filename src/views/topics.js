@@ -1,7 +1,7 @@
 import { h, svg, srOnly, externalLink, plural } from '../ui.js';
 import { WEEKS, STEPS, TOPICS, TOPIC_BY_ID, topicsForWeek, handbookUrl } from '../data.js';
 import { csesUrl, codeforcesUrl } from '../practice.js';
-import { stepsDone, isTopicDone, toggleStep, setNotes, topicMatches } from '../store.js';
+import { stepsDone, isTopicDone, toggleStep, setNotes, topicMatches, practiceMatches } from '../store.js';
 
 const NOTES_DELAY = 400;
 const FILTERS = [
@@ -26,31 +26,60 @@ function topicLinks(topic) {
   if (topic.page) {
     links.push(externalLink(handbookUrl(topic.page), `Handbook: chapter ${topic.chapter}, p. ${topic.page}`));
   }
-  if (topic.visualize) {
-    links.push(externalLink(topic.visualize, 'Visualize on VisuAlgo'));
-  } else {
-    const q = encodeURIComponent(`${topic.title} algorithm visualization`).replace(/%20/g, '+');
-    links.push(externalLink(`https://www.youtube.com/results?search_query=${q}`, 'Visualize: search YouTube'));
-  }
   if (topic.reference) {
     links.push(externalLink(topic.reference, `Reference: ${referenceName(topic.reference)}`));
   }
-  return h('ul', { class: 'topic-links' }, links.map((a) => h('li', null, a)));
+  return links.length ? h('ul', { class: 'topic-links' }, links.map((a) => h('li', null, a))) : null;
+}
+
+function playIcon() {
+  return svg('svg', { class: 'play-icon', viewBox: '0 0 16 16', 'aria-hidden': 'true', focusable: 'false' },
+    svg('path', { d: 'M5 3.5 L12.5 8 L5 12.5 Z' }));
+}
+
+function visualRow(name, topic, visuals) {
+  if (!visuals.length) return null;
+  return h('div', { class: 'link-row' },
+    h('span', { class: 'link-row-label', 'aria-hidden': 'true' }, name),
+    h('ul', { class: 'link-row-list', 'aria-label': `${name} for ${topic.title}` },
+      visuals.map((v) => h('li', null, v.video
+        ? externalLink(v.url, playIcon(), v.label)
+        : externalLink(v.url, v.label)))),
+  );
+}
+
+// Interactive pages in one row, videos (marked with a play icon) in the next.
+function visualsList(topic) {
+  if (!topic.visuals.length) return null;
+  const pages = topic.visuals.filter((v) => !v.video);
+  const videos = topic.visuals.filter((v) => v.video);
+  const counts = [pages.length && `${pages.length} interactive`, videos.length && plural(videos.length, 'video')]
+    .filter(Boolean).join(' · ');
+  return h('details', { class: 'fold visuals' },
+    h('summary', null, 'Visualize', h('span', { class: 'summary-count' }, ` ${counts}`)),
+    h('div', { class: 'fold-body' },
+      visualRow('Interactive', topic, pages),
+      visualRow('Videos', topic, videos)),
+  );
 }
 
 function practiceRow(site, topic, problems, toUrl) {
-  return h('div', { class: 'practice-row' },
-    h('span', { class: 'practice-site', 'aria-hidden': 'true' }, site),
-    h('ul', { class: 'practice-list', 'aria-label': `${site} practice problems for ${topic.title}` },
+  return h('div', { class: 'link-row' },
+    h('span', { class: 'link-row-label', 'aria-hidden': 'true' }, site),
+    h('ul', { class: 'link-row-list', 'aria-label': `${site} practice problems for ${topic.title}` },
       problems.map(([id, name]) => h('li', null,
         externalLink(toUrl(id), h('span', { class: 'pid' }, String(id)), ' ', name)))),
   );
 }
 
 function practiceProblems(topic) {
-  return h('div', { class: 'practice' },
-    practiceRow('CSES', topic, topic.practice.cses, csesUrl),
-    practiceRow('Codeforces', topic, topic.practice.cf, codeforcesUrl),
+  const { cses, cf } = topic.practice;
+  return h('details', { class: 'fold practice' },
+    h('summary', null, 'Practice problems',
+      h('span', { class: 'summary-count' }, ` ${cses.length} CSES · ${cf.length} Codeforces`)),
+    h('div', { class: 'fold-body' },
+      practiceRow('CSES', topic, cses, csesUrl),
+      practiceRow('Codeforces', topic, cf, codeforcesUrl)),
   );
 }
 
@@ -83,6 +112,7 @@ function topicRow(topic, state) {
       }, tick(), step.label)),
     ),
     topicLinks(topic),
+    visualsList(topic),
     practiceProblems(topic),
     h('details', { class: 'notes', open: Boolean(progress.notes) },
       h('summary', null, 'Notes'),
@@ -128,7 +158,7 @@ export function mount(container, { store, params, restore }) {
   container.append(
     h('header', { class: 'page-head' },
       h('h1', { tabindex: '-1' }, 'Topics'),
-      h('p', { class: 'lede' }, `${TOPICS.length} topics in plan order. For each one: read and visualize it, then code it from memory and practise. Problems that gave you trouble go in the problem log for revision. Optional topics can wait until the core ones feel solid.`),
+      h('p', { class: 'lede' }, `${TOPICS.length} topics in plan order. For each one: read and visualize it, then code it from memory and solve its practice problems. Problems that gave you trouble go in the problem log for revision. Optional topics can wait until the core ones feel solid.`),
     ),
     h('div', { class: 'filters card' },
       h('div', { class: 'field field-show' },
@@ -146,8 +176,10 @@ export function mount(container, { store, params, restore }) {
     for (const section of sections.children) {
       let visible = 0;
       for (const row of section.querySelectorAll('.topic')) {
-        const match = topicMatches(store.get(), TOPIC_BY_ID[row.dataset.topic], filter);
+        const topic = TOPIC_BY_ID[row.dataset.topic];
+        const match = topicMatches(store.get(), topic, filter);
         row.hidden = !match;
+        showMatchingProblems(row.querySelector('.practice'), match && practiceMatches(topic, filter.query));
         if (match) visible += 1;
       }
       section.hidden = visible === 0;
@@ -155,6 +187,18 @@ export function mount(container, { store, params, restore }) {
     }
     empty.hidden = shown !== 0;
     status.textContent = shown === TOPICS.length ? `Showing all ${TOPICS.length} topics` : `Showing ${plural(shown, 'topic')} of ${TOPICS.length}`;
+  }
+
+  // A search that matches a problem opens that topic's practice list, and closes it again
+  // once the search no longer matches, unless it was open already.
+  function showMatchingProblems(details, matches) {
+    if (matches && !details.open) {
+      details.open = true;
+      details.dataset.searchOpened = '';
+    } else if (!matches && 'searchOpened' in details.dataset) {
+      details.open = false;
+      delete details.dataset.searchOpened;
+    }
   }
 
   function refreshRow(topicId) {
@@ -220,6 +264,12 @@ export function mount(container, { store, params, restore }) {
     for (const details of sections.querySelectorAll('.notes')) {
       details.open = restore.openNotes.includes(details.closest('.topic').dataset.topic);
     }
+    for (const details of sections.querySelectorAll('.practice')) {
+      details.open = restore.openPractice.includes(details.closest('.topic').dataset.topic);
+    }
+    for (const details of sections.querySelectorAll('.visuals')) {
+      details.open = restore.openVisuals.includes(details.closest('.topic').dataset.topic);
+    }
   }
   applyFilter();
 
@@ -233,8 +283,8 @@ export function mount(container, { store, params, restore }) {
   return {
     flush,
     snapshot() {
-      const open = [...sections.querySelectorAll('.notes[open]')].map((d) => d.closest('.topic').dataset.topic);
-      return { show: filter.show, openNotes: open };
+      const openIn = (selector) => [...sections.querySelectorAll(`${selector}[open]`)].map((d) => d.closest('.topic').dataset.topic);
+      return { show: filter.show, openNotes: openIn('.notes'), openPractice: openIn('.practice'), openVisuals: openIn('.visuals') };
     },
     unmount() {
       flush();

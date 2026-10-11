@@ -6,7 +6,7 @@ import { PRACTICE, csesUrl, codeforcesUrl } from '../src/practice.js';
 import {
   STORAGE_KEY, BACKUP_KEY, SCHEMA_VERSION, TOTAL_STEPS,
   defaultState, migrate, load, save, createStore,
-  toggleStep, setStep, setNotes, stepsDone, isTopicDone, totalStepsDone, nextTopic, topicMatches,
+  toggleStep, setStep, setNotes, stepsDone, isTopicDone, totalStepsDone, nextTopic, topicMatches, practiceMatches,
   setWeekCheck, weekChecklist, weekStatus, weekFill, currentWeek,
   validateProblem, addProblem, updateProblem, deleteProblem, markResolved,
   filterProblems, sortedProblems, revisitCount, mistakePatterns, isHttpUrl, defaultRevisit,
@@ -48,7 +48,7 @@ describe('static data', () => {
   test('topic ids are unique and every URL is https', () => {
     assert.equal(new Set(TOPICS.map((t) => t.id)).size, TOPICS.length);
     for (const t of TOPICS) {
-      for (const url of [t.visualize, t.reference]) if (url) assert.ok(url.startsWith('https://'), url);
+      for (const url of [t.reference, ...t.visuals.map((v) => v.url)]) if (url) assert.ok(url.startsWith('https://'), url);
     }
   });
 
@@ -165,6 +165,23 @@ describe('topic steps', () => {
     assert.equal(topicMatches(s, c3, { query: 'ferris wheel' }), true, 'matches practice problem names');
     assert.equal(topicMatches(s, c3, { query: '1201c' }), true, 'matches problem ids');
   });
+
+  test('practiceMatches is true only when the search is about a practice problem', () => {
+    const c3 = TOPICS.find((t) => t.id === 'c3');
+    assert.equal(practiceMatches(c3, 'ferris wheel'), true);
+    assert.equal(practiceMatches(c3, '1201c'), true);
+    assert.equal(practiceMatches(c3, 'binary search'), false, 'words from the title only');
+    assert.equal(practiceMatches(c3, '  '), false);
+  });
+
+  test('every topic has a visuals list, and the links in it are unique', () => {
+    for (const t of TOPICS) {
+      assert.ok(Array.isArray(t.visuals), t.id);
+      const urls = t.visuals.map((v) => v.url);
+      assert.equal(new Set(urls).size, urls.length, `${t.id} lists a link twice`);
+      for (const v of t.visuals) assert.ok(v.label && typeof v.video === 'boolean', `${t.id}: ${v.url}`);
+    }
+  });
 });
 
 describe('weeks', () => {
@@ -238,13 +255,35 @@ describe('weeks', () => {
     assert.equal(currentWeek(s), null);
   });
 
-  test('weekFill grows with the checklist', () => {
+  test('weekFill grows a part per finished topic, half a part per step', () => {
     let s = defaultState();
+    const parts = topicsForWeek(2).length;
     assert.equal(weekFill(s, 2), 0);
     s = setWeekCheck(s, 2, 'practice', true);
-    assert.equal(weekFill(s, 2), 0.25);
-    s = finishWeek(s, 1);
-    assert.equal(weekFill(s, 1), 1);
+    assert.equal(weekFill(s, 2), 0, 'the checklist alone does not fill a week with topics');
+    s = setStep(s, 'c5', 'read', true);
+    assert.equal(weekFill(s, 2), 0.5 / parts);
+    s = finishTopic(s, 'c5');
+    assert.equal(weekFill(s, 2), 1 / parts);
+    for (const t of topicsForWeek(2)) s = finishTopic(s, t.id);
+    assert.equal(weekFill(s, 2), 1);
+  });
+
+  test('optional topics do not count towards the fill', () => {
+    let s = defaultState();
+    for (const t of topicsForWeek(7).filter((x) => x.optional)) s = finishTopic(s, t.id);
+    assert.equal(weekFill(s, 7), 0);
+    for (const t of topicsForWeek(7).filter((x) => !x.optional)) s = finishTopic(s, t.id);
+    assert.equal(weekFill(s, 7), 1);
+  });
+
+  test('week 8 has no topics, so its balloon fills with its checklist', () => {
+    let s = defaultState();
+    const items = WEEKS[7].checklist.length;
+    s = setWeekCheck(s, 8, 'virtuals', true);
+    assert.equal(weekFill(s, 8), 1 / items);
+    s = finishWeek(s, 8);
+    assert.equal(weekFill(s, 8), 1);
   });
 });
 
