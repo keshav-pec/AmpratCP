@@ -4,6 +4,7 @@ import { createAppServer, publicFile } from '../server/serve.js';
 import { createSyncHandler, cleanData, parseOrigins, redact, storageReason, MAX_BODY_BYTES } from '../server/sync-handler.js';
 import { createMemoryStorage, createMongoStorage, storageFromEnv } from '../server/storage.js';
 import { TOPICS } from '../src/data.js';
+import { SCHEMA_VERSION } from '../src/store.js';
 
 const KEY = 'test-key-0123456789-abcdefghij';
 const SITE = 'https://example.github.io';
@@ -52,14 +53,14 @@ describe('sync API', () => {
 
     const first = await call(base, {
       method: 'PUT',
-      body: { baseRev: 0, data: { topics: { c1: { read: true, notes: 'hi' } }, prefs: { theme: 'dark' } } },
+      body: { baseRev: 0, data: { version: SCHEMA_VERSION, topics: { c1: { read: true, notes: 'hi' } }, prefs: { theme: 'dark' } } },
     });
     assert.equal(first.status, 200);
     assert.deepEqual(await first.json(), { rev: 1 });
 
     const saved = await (await call(base)).json();
     assert.equal(saved.rev, 1);
-    assert.equal(saved.data.version, 2);
+    assert.equal(saved.data.version, SCHEMA_VERSION);
     assert.equal(saved.data.topics.c1.read, true);
     assert.equal(saved.data.topics.c1.notes, 'hi');
     assert.equal(Object.keys(saved.data.topics).length, TOPICS.length);

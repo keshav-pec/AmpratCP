@@ -12,13 +12,17 @@ log, and re-solving the ones marked to revisit is the revision.
 
 ## Pages
 
-- **Home:** overall progress (out of 86 topic steps), the 8-week balloon strip, the current
-  week, the next step to work on, and links to the problem log.
-- **Plan:** the 8 weeks, each with its topics, a checklist and a status (Not started,
-  In progress or Done). Every week is always open.
-- **Topics:** all 43 topics, numbered 1 to 43 in plan order (each also shows its handbook
-  chapter). Each topic is a card that opens and closes like the weekly plan cards: closed, it
-  shows the title, a one-line focus and progress; open, it has step chips, links to the handbook
+- **Home:** your rating and rank, the 8-week balloon strip, the current week, the next step
+  to work on, and links to the problem log.
+- **Rating:** every topic step you finish raises a Codeforces-style rating, from 800 with
+  nothing done to 3000 with all 86 steps done. Ranks use Codeforces' names, thresholds and
+  colors (Newbie, Pupil, Specialist, Expert, Candidate Master and up). The sidebar shows your
+  rank, and a toast cheers each finished topic ("Accepted") and each rank up.
+- **Plan:** the 8 weeks, each with its topics, a checklist and a verdict-style status
+  (Pending, Running or Accepted). Every week is always open.
+- **Topics:** all 43 topics, numbered 1 to 43 in plan order. Each topic is a card that opens and closes like the weekly plan cards: closed, it
+  shows the title, a one-line focus, priority and progress (an "AC" badge once both steps
+  are done); open, it has step chips, links to the handbook
   and a reference, visualizations in a collapsible list (interactive pages such as VisuAlgo, USFCA and Red
   Blob Games, plus videos from creators who teach the topic well, such as William Fiset,
   Reducible, Errichto and Abdul Bari), exact practice problems in a collapsible list (CSES task ids and Codeforces

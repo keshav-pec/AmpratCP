@@ -1,13 +1,8 @@
-import { h, svg, srOnly, externalLink, plural } from '../ui.js';
+import { h, svg, srOnly, externalLink, plural, chevron } from '../ui.js';
 import { WEEKS, STEPS, topicsForWeek } from '../data.js';
 import {
   weekChecklist, weekStatus, currentWeek, stepsDone, revisitCount, setWeekCheck, weekPracticeCounts, STATUS_LABELS,
 } from '../store.js';
-
-function chevron() {
-  return svg('svg', { class: 'chevron', viewBox: '0 0 16 16', 'aria-hidden': 'true', focusable: 'false' },
-    svg('path', { d: 'M4 6 L8 10 L12 6' }));
-}
 
 function checkIcon(done) {
   return svg('svg', { class: `check-icon${done ? ' is-done' : ''}`, viewBox: '0 0 20 20', 'aria-hidden': 'true', focusable: 'false' },
@@ -44,7 +39,7 @@ function derivedItem(item) {
     h('div', { class: 'check-text' },
       h('span', null, item.label),
       srOnly(item.done ? ' (done)' : ' (not done yet)'),
-      h('span', { class: 'check-hint muted' }, `${done} of ${total} steps. This ticks itself when every topic has both steps done.`),
+      h('span', { class: 'check-hint muted' }, `${done}/${total} steps. Ticks itself when they're all done.`),
     ),
   );
 }
@@ -79,7 +74,7 @@ function weekCard(week, state, expanded) {
   const topicList = topics.length
     ? h('ol', { class: 'week-topics', start: String(topics[0].number) }, topics.map((t) => h('li', null,
       h('a', { href: `#/topics?topic=${t.id}` }, t.title),
-      h('span', { class: 'muted' }, ` ${t.chapter ? `Ch. ${t.chapter}` : 'Not in the book'} · ${stepsDone(state, t.id)} of ${STEPS.length}${t.optional ? ' · optional' : ''}`),
+      h('span', { class: 'muted' }, ` ${t.chapter ? `Ch. ${t.chapter}` : 'Not in the book'} · ${stepsDone(state, t.id)}/${STEPS.length}${t.optional ? ' · optional' : ''}`),
     )))
     : h('p', { class: 'muted' }, 'No new topics this week.');
 
@@ -110,7 +105,7 @@ export function mount(container, { store, params, restore }) {
   container.append(
     h('header', { class: 'page-head' },
       h('h1', { tabindex: '-1' }, 'Plan'),
-      h('p', { class: 'lede' }, 'Eight weeks in order. Every week is open, so move on whenever you feel ready.'),
+      h('p', { class: 'lede' }, 'Eight weeks, all open. Move on whenever you feel ready.'),
     ),
     list,
   );

@@ -1,9 +1,12 @@
 // Router and boot.
 
-import { createStore, STORAGE_KEY, BACKUP_KEY, setTheme, setSidebar, resolveTheme } from './store.js';
+import {
+  createStore, STORAGE_KEY, BACKUP_KEY, setTheme, setSidebar, resolveTheme, rating, rankFor, isTopicDone,
+} from './store.js';
+import { TOPICS } from './data.js';
 import { createSync, SYNC_STORAGE_KEY } from './sync.js';
 import { createSyncUi } from './sync-ui.js';
-import { showNotice, clearNotice, prefersReducedMotion } from './ui.js';
+import { h, showNotice, clearNotice, prefersReducedMotion, toast } from './ui.js';
 import * as home from './views/home.js';
 import * as plan from './views/plan.js';
 import * as topics from './views/topics.js';
@@ -29,6 +32,7 @@ let sync = null;
 function onSave(result) {
   // Even when this browser couldn't save, the change can still reach the sync server.
   if (sync) sync.schedule();
+  showRating({ celebrate: true });
   if (result.ok) {
     clearNotice('save-error');
     return;
@@ -40,6 +44,28 @@ function onSave(result) {
 }
 
 const store = createStore({ storage: getStorage(), onSave });
+
+// ---------- rating ----------
+
+const rankLine = document.getElementById('rank-line');
+let rated = store.get();
+
+// Shows the rating in the sidebar. After a change, cheers a rank up or a newly finished topic.
+function showRating({ celebrate = false } = {}) {
+  const state = store.get();
+  const value = rating(state);
+  const rank = rankFor(value);
+  rankLine.className = `brand-sub rank-line rank-${rank.color}`;
+  rankLine.replaceChildren(h('span', { class: 'rank-title' }, rank.title), ' ', h('span', { class: 'rating-value' }, String(value)));
+  if (celebrate) {
+    const before = rating(rated);
+    const solved = TOPICS.find((t) => isTopicDone(state, t.id) && !isTopicDone(rated, t.id));
+    if (rank.min > rankFor(before).min) toast(`Rank up: ${rank.title} (${value})`);
+    else if (solved) toast(`Accepted: ${solved.title} · rating ${value} (+${value - before})`);
+  }
+  rated = state;
+}
+showRating();
 
 if (store.loadStatus === 'corrupt') {
   showNotice('load-corrupt', `Your saved progress couldn't be read, so Balloon Room started fresh. The unreadable data is kept in this browser under the key "${BACKUP_KEY}".`);
@@ -280,6 +306,7 @@ window.addEventListener('storage', (event) => {
   if (!store.reload()) return;
   applyTheme();
   applySidebar();
+  showRating();
   refreshView();
 });
 

@@ -1,15 +1,15 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { TOPICS, WEEKS, STEPS, topicsForWeek, handbookUrl } from '../src/data.js';
+import { TOPICS, WEEKS, STEPS, TOTAL_STEPS, topicsForWeek, handbookUrl } from '../src/data.js';
 import { PRACTICE, csesUrl, codeforcesUrl } from '../src/practice.js';
 import {
-  STORAGE_KEY, BACKUP_KEY, SCHEMA_VERSION, TOTAL_STEPS,
+  STORAGE_KEY, BACKUP_KEY, SCHEMA_VERSION,
   defaultState, migrate, load, save, createStore,
   toggleStep, setStep, setNotes, stepsDone, isTopicDone, totalStepsDone, nextTopic, topicMatches, practiceMatches,
   setWeekCheck, weekChecklist, weekStatus, weekFill, currentWeek,
   validateProblem, addProblem, updateProblem, deleteProblem, markResolved,
-  filterProblems, sortedProblems, revisitCount, mistakePatterns, isHttpUrl, defaultRevisit,
+  filterProblems, sortedProblems, revisitCount, mistakePatterns, isHttpUrl, defaultRevisit, rating, rankFor,
   weekPracticeCounts, setTheme, setSidebar, resolveTheme,
 } from '../src/store.js';
 
@@ -602,5 +602,27 @@ describe('topic numbers and handbook links', () => {
   test('handbook links open the reader on the PDF page, 10 after the printed page', () => {
     assert.equal(handbookUrl(25), './book.html#page=35');
     assert.equal(handbookUrl(84), './book.html#page=94');
+  });
+});
+
+describe('rating', () => {
+  test('runs from 800 with nothing done to 3000 with every step done', () => {
+    let s = defaultState();
+    assert.equal(rating(s), 800);
+    for (const t of TOPICS) for (const step of STEPS) s = setStep(s, t.id, step.key, true);
+    assert.equal(rating(s), 3000);
+  });
+
+  test('ranks use the Codeforces thresholds', () => {
+    assert.equal(rankFor(800).title, 'Newbie');
+    assert.equal(rankFor(1199).title, 'Newbie');
+    assert.equal(rankFor(1200).title, 'Pupil');
+    assert.equal(rankFor(1600).title, 'Expert');
+    assert.equal(rankFor(1899).title, 'Expert');
+    assert.equal(rankFor(1900).title, 'Candidate Master');
+    assert.equal(rankFor(2400).title, 'Grandmaster');
+    assert.equal(rankFor(3000).title, 'Legendary Grandmaster');
+    assert.equal(rankFor(800).next.title, 'Pupil');
+    assert.equal(rankFor(3000).next, null);
   });
 });

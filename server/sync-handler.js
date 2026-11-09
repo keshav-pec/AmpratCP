@@ -6,9 +6,10 @@
 
 import { createHash, timingSafeEqual } from 'node:crypto';
 import { migrate, syncedData } from '../src/store.js';
+import { storageFromEnv } from './storage.js';
 
 export const MAX_BODY_BYTES = 1_000_000;
-export const MIN_KEY_LENGTH = 16;
+const MIN_KEY_LENGTH = 16;
 
 const isObject = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 
@@ -79,25 +80,26 @@ function httpError(status, code) {
   return Object.assign(new Error(code), { status, code });
 }
 
+function parseJson(text, maxBytes) {
+  if (Buffer.byteLength(text) > maxBytes) throw httpError(413, 'too-large');
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw httpError(400, 'bad-json');
+  }
+}
+
 async function readJsonBody(req, maxBytes) {
   if (Number(req.headers['content-length']) > maxBytes) throw httpError(413, 'too-large');
-  // Some hosts (Vercel) parse JSON bodies before the handler runs.
+  // Some hosts (Vercel) parse JSON bodies before the handler runs, and throw on bad JSON.
   let parsed;
   try {
     parsed = req.body;
   } catch {
     throw httpError(400, 'bad-json');
   }
+  if (typeof parsed === 'string' || Buffer.isBuffer(parsed)) return parseJson(String(parsed), maxBytes);
   if (parsed !== undefined && parsed !== null) {
-    if (typeof parsed === 'string' || Buffer.isBuffer(parsed)) {
-      const text = String(parsed);
-      if (Buffer.byteLength(text) > maxBytes) throw httpError(413, 'too-large');
-      try {
-        return JSON.parse(text);
-      } catch {
-        throw httpError(400, 'bad-json');
-      }
-    }
     if (Buffer.byteLength(JSON.stringify(parsed)) > maxBytes) throw httpError(413, 'too-large');
     return parsed;
   }
@@ -108,11 +110,7 @@ async function readJsonBody(req, maxBytes) {
     if (size > maxBytes) throw httpError(413, 'too-large');
     chunks.push(chunk);
   }
-  try {
-    return JSON.parse(Buffer.concat(chunks).toString('utf8'));
-  } catch {
-    throw httpError(400, 'bad-json');
-  }
+  return parseJson(Buffer.concat(chunks).toString('utf8'), maxBytes);
 }
 
 export function createSyncHandler({ storage, syncKey, allowedOrigins = [], maxBytes = MAX_BODY_BYTES, log = console } = {}) {
@@ -149,4 +147,18 @@ export function createSyncHandler({ storage, syncKey, allowedOrigins = [], maxBy
       return send(res, 502, { error: 'storage-unavailable', reason }, cors);
     }
   };
+}
+
+// The handler set up from environment variables: MONGODB_URI (or SYNC_STORE=memory), SYNC_KEY
+// and ALLOWED_ORIGINS. Used by both the Node server and the Vercel function.
+export function syncHandlerFromEnv(env, { MongoClient = null, log = console } = {}) {
+  const storage = storageFromEnv(env, { MongoClient });
+  const handler = createSyncHandler({
+    storage,
+    syncKey: String(env.SYNC_KEY || '').trim(),
+    allowedOrigins: parseOrigins(env.ALLOWED_ORIGINS),
+    log,
+  });
+  handler.storage = storage;
+  return handler;
 }

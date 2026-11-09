@@ -10,8 +10,6 @@ export const STEPS = [
   { key: 'practice', label: 'Code and practice' },
 ];
 
-export const PRIORITIES = ['Core', 'Common', 'Edge'];
-
 export const GYM_URL = 'https://codeforces.com/gym';
 
 // The PDF has 10 front-matter pages before book page 1.
@@ -19,7 +17,7 @@ export const BOOK_PAGE_OFFSET = 10;
 export const BOOK_PATH = './CP_book.pdf';
 // The built-in reader opens the handbook on the right page in every browser, phones included
 // (many ignore #page=N on a plain PDF link).
-export const READER_PATH = './book.html';
+const READER_PATH = './book.html';
 
 // Link to a book page (as printed in the handbook) in the reader. The PDF page is 10 later.
 export function handbookUrl(bookPage) {
@@ -27,7 +25,7 @@ export function handbookUrl(bookPage) {
 }
 
 // Past ICPC India contests (Kanpur, Amritapuri and others) with links for upsolving.
-export const INDIA_CONTESTS_URL = 'https://codeforces.com/blog/entry/105000';
+const INDIA_CONTESTS_URL = 'https://codeforces.com/blog/entry/105000';
 
 // `focus` says what to master; `chapter` and `page` are null for topics that are not in the book.
 // Edge topics are optional: they never block a week's checklist.

@@ -1,4 +1,4 @@
-import { h, svg, srOnly, externalLink, plural } from '../ui.js';
+import { h, svg, srOnly, externalLink, plural, chevron } from '../ui.js';
 import { WEEKS, STEPS, TOPICS, TOPIC_BY_ID, topicsForWeek, handbookUrl } from '../data.js';
 import { csesUrl, codeforcesUrl } from '../practice.js';
 import { LEVELS, csesDifficulty, cfDifficulty } from '../difficulty.js';
@@ -14,11 +14,6 @@ const FILTERS = [
 function tick() {
   return svg('svg', { class: 'chip-tick', viewBox: '0 0 16 16', 'aria-hidden': 'true', focusable: 'false' },
     svg('path', { d: 'M3.5 8.5 L6.5 11.5 L12.5 5' }));
-}
-
-function chevron() {
-  return svg('svg', { class: 'chevron', viewBox: '0 0 16 16', 'aria-hidden': 'true', focusable: 'false' },
-    svg('path', { d: 'M4 6 L8 10 L12 6' }));
 }
 
 function referenceName(url) {
@@ -43,14 +38,12 @@ function playIcon() {
     svg('path', { d: 'M5 3.5 L12.5 8 L5 12.5 Z' }));
 }
 
-function visualRow(name, topic, visuals) {
-  if (!visuals.length) return null;
+// A labelled row of links: one kind of visualization, or one site's practice problems.
+function linkRow(label, listLabel, links, listClass = 'link-row-list') {
+  if (!links.length) return null;
   return h('div', { class: 'link-row' },
-    h('span', { class: 'link-row-label', 'aria-hidden': 'true' }, name),
-    h('ul', { class: 'link-row-list', 'aria-label': `${name} for ${topic.title}` },
-      visuals.map((v) => h('li', null, v.video
-        ? externalLink(v.url, playIcon(), v.label)
-        : externalLink(v.url, v.label)))),
+    h('span', { class: 'link-row-label', 'aria-hidden': 'true' }, label),
+    h('ul', { class: listClass, 'aria-label': listLabel }, links.map((a) => h('li', null, a))),
   );
 }
 
@@ -64,8 +57,8 @@ function visualsList(topic) {
   return h('details', { class: 'fold visuals' },
     h('summary', null, 'Visualize', h('span', { class: 'summary-count' }, ` ${counts}`)),
     h('div', { class: 'fold-body' },
-      visualRow('Interactive', topic, pages),
-      visualRow('Videos', topic, videos)),
+      linkRow('Interactive', `Interactive for ${topic.title}`, pages.map((v) => externalLink(v.url, v.label))),
+      linkRow('Videos', `Videos for ${topic.title}`, videos.map((v) => externalLink(v.url, playIcon(), v.label)))),
   );
 }
 
@@ -80,11 +73,8 @@ function problemPill(url, id, name, difficulty) {
 }
 
 function practiceRow(site, topic, problems, toUrl, toDifficulty) {
-  return h('div', { class: 'link-row' },
-    h('span', { class: 'link-row-label', 'aria-hidden': 'true' }, site),
-    h('ul', { class: 'link-row-list pill-list', 'aria-label': `${site} practice problems for ${topic.title}` },
-      problems.map(([id, name]) => h('li', null, problemPill(toUrl(id), id, name, toDifficulty(id))))),
-  );
+  return linkRow(site, `${site} practice problems for ${topic.title}`,
+    problems.map(([id, name]) => problemPill(toUrl(id), id, name, toDifficulty(id))), 'link-row-list pill-list');
 }
 
 function difficultyLegend() {
@@ -94,7 +84,7 @@ function difficultyLegend() {
       LEVELS.map((level) => h('li', null, h('span', {
         class: `pill pill-${level.key}`, title: `CSES: ${level.cses}. Codeforces: ${level.cf}.`,
       }, level.label)))),
-    h('p', { class: 'muted small legend-note' }, 'CSES problems are graded by how many people solved them, Codeforces problems by their rating. Hover a problem for its numbers.'),
+    h('span', { class: 'muted small' }, 'CSES by solve count, Codeforces by rating'),
   );
 }
 
@@ -110,7 +100,7 @@ function practiceProblems(topic) {
 }
 
 function countText(state, topicId) {
-  return `${stepsDone(state, topicId)} of ${STEPS.length}`;
+  return `${stepsDone(state, topicId)}/${STEPS.length}`;
 }
 
 // Each topic is a card that opens and closes like the weekly plan cards. Closed, it shows the
@@ -133,9 +123,8 @@ function topicRow(topic, state) {
     h('span', { class: 'topic-focus' }, topic.focus)),
   h('span', { class: 'topic-meta' },
     h('span', { class: `badge badge-${topic.priority.toLowerCase()}` }, topic.priority),
-    topic.optional ? h('span', { class: 'badge badge-optional' }, 'Optional') : null,
-    h('span', { class: 'topic-chapter' }, topic.chapter ? `Chapter ${topic.chapter}` : 'Not in the book'),
-    h('span', { class: 'topic-count' }, h('span', { class: 'js-count' }, countText(state, topic.id)), srOnly(' steps done'))),
+    h('span', { class: 'topic-count' }, h('span', { class: 'js-count' }, countText(state, topic.id)), srOnly(' steps done')),
+    h('span', { class: 'verdict', 'aria-hidden': 'true' }, 'AC')),
   chevron());
 
   return h('li', { class: `card topic${isTopicDone(state, topic.id) ? ' is-done' : ''}`, id: `topic-${topic.id}`, dataset: { topic: topic.id } },
@@ -181,7 +170,7 @@ function weekSection(week, state) {
 function weekCountText(n, state) {
   const topics = topicsForWeek(n);
   const done = topics.reduce((sum, t) => sum + stepsDone(state, t.id), 0);
-  return `${done} of ${topics.length * STEPS.length} steps`;
+  return `${done}/${topics.length * STEPS.length} steps`;
 }
 
 export function mount(container, { store, params, restore }) {
@@ -194,7 +183,7 @@ export function mount(container, { store, params, restore }) {
     type: 'button', class: 'chip chip-filter', 'aria-pressed': String(f.id === filter.show), dataset: { filter: f.id },
   }, f.label));
   const search = h('input', { type: 'search', id: 'topic-search', name: 'topic-search', autocomplete: 'off' });
-  const status = h('p', { class: 'muted', id: 'topic-status', 'aria-live': 'polite' });
+  const status = h('p', { class: 'muted status-line', id: 'topic-status', 'aria-live': 'polite' });
   const empty = h('p', { class: 'empty', hidden: true }, 'No topics match. Try another filter or search.');
   const weeksWithTopics = WEEKS.filter((w) => topicsForWeek(w.n).length);
   const sections = h('div', { class: 'topic-weeks' }, weeksWithTopics.map((w) => weekSection(w, state)));
@@ -202,7 +191,7 @@ export function mount(container, { store, params, restore }) {
   container.append(
     h('header', { class: 'page-head' },
       h('h1', { tabindex: '-1' }, 'Topics'),
-      h('p', { class: 'lede' }, `${TOPICS.length} topics in plan order. For each one: read and visualize it, then code it from memory and solve its practice problems. Problems that gave you trouble go in the problem log for revision. Optional topics can wait until the core ones feel solid.`),
+      h('p', { class: 'lede' }, `${TOPICS.length} topics in plan order. Read and visualize each one, then code it and solve its problems. Edge topics are optional.`),
       difficultyLegend(),
     ),
     h('div', { class: 'filters card' },
@@ -231,7 +220,7 @@ export function mount(container, { store, params, restore }) {
       shown += visible;
     }
     empty.hidden = shown !== 0;
-    status.textContent = shown === TOPICS.length ? `Showing all ${TOPICS.length} topics` : `Showing ${plural(shown, 'topic')} of ${TOPICS.length}`;
+    status.textContent = shown === TOPICS.length ? '' : `Showing ${plural(shown, 'topic')} of ${TOPICS.length}`;
   }
 
   // A search that matches a problem opens that topic's card and practice list, and closes each
