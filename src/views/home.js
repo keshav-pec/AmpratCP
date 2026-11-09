@@ -2,7 +2,7 @@ import { h, svg, srOnly, progressBar } from '../ui.js';
 import { WEEKS, WEEK_BY_NUMBER, TOTAL_STEPS, STEPS, TOPICS } from '../data.js';
 import {
   totalStepsDone, weekFill, weekStatus, weekChecklist, currentWeek, nextTopic, stepsDone,
-  revisitCount, STATUS_LABELS,
+  revisitCount, rating, rankFor, MIN_RATING, STATUS_LABELS,
 } from '../store.js';
 
 // Balloon body from the bottom tip, round at the top. Spans y = 2..38.
@@ -43,7 +43,7 @@ function balloonStrip(state, current) {
 
 function itemText(item) {
   if (!item.derived) return item.label;
-  return `${item.label} (${item.progress.done} of ${item.progress.total} steps)`;
+  return `${item.label} (${item.progress.done}/${item.progress.total} steps)`;
 }
 
 function currentWeekCard(state, n) {
@@ -76,15 +76,33 @@ function continueCard(state) {
     return card;
   }
   const { topic, step } = next;
-  const where = topic.chapter ? `Chapter ${topic.chapter}` : 'Not in the book';
+  const where = topic.chapter ? `Ch. ${topic.chapter}` : 'Not in the book';
   card.append(
     h('p', { class: 'card-title' }, topic.title),
-    h('p', { class: 'muted' }, `Topic ${topic.number} · Week ${topic.week} · ${where} · ${stepsDone(state, topic.id)} of ${STEPS.length} steps`),
+    h('p', { class: 'muted' }, `Topic ${topic.number} · Week ${topic.week} · ${where} · ${stepsDone(state, topic.id)}/${STEPS.length} steps`),
     h('p', { class: 'small' }, topic.focus),
     h('p', null, 'Next step: ', h('strong', null, step.label)),
     h('div', { class: 'card-actions' }, h('a', { class: 'btn', href: `#/topics?topic=${topic.id}` }, 'Go to topic')),
   );
   return card;
+}
+
+// Rating, rank and how far the next rank is. The bar fills across the current rank's band.
+function ratingCard(state, current) {
+  const value = rating(state);
+  const rank = rankFor(value);
+  const floor = Math.max(rank.min, MIN_RATING);
+  const fraction = rank.next ? (value - floor) / (rank.next.min - floor) : 1;
+  const toNext = rank.next ? `${rank.next.min - value} to ${rank.next.title}` : 'Top rank';
+  return h('section', { class: `card rating-card rank-${rank.color}`, 'aria-labelledby': 'home-rating-title' },
+    h('h2', { id: 'home-rating-title', class: 'card-label' }, 'Rating'),
+    h('p', { class: 'rating-line' },
+      h('span', { class: 'rating-value' }, String(value)), ' ', h('span', { class: 'rank-title' }, rank.title)),
+    h('p', { class: 'muted small' }, `${totalStepsDone(state)}/${TOTAL_STEPS} steps solved · ${toNext}`),
+    progressBar(fraction),
+    balloonStrip(state, current),
+    h('p', { class: 'muted small' }, 'Each balloon is a week. It fills as you finish its topics.'),
+  );
 }
 
 function statCard(href, count, label) {
@@ -104,18 +122,10 @@ export function mount(container, { store }) {
   container.append(
     h('header', { class: 'page-head' },
       h('h1', { tabindex: '-1' }, fresh ? 'Welcome to Balloon Room' : 'Welcome back'),
-      h('p', { class: 'lede' }, fresh
-        ? `${TOPICS.length} topics across 8 weeks. Start with Week 1 whenever you're ready.`
-        : 'Pick up wherever you left off. There is no schedule to keep up with.'),
+      fresh ? h('p', { class: 'lede' }, `${TOPICS.length} topics across 8 weeks. Every step you finish raises your rating.`) : null,
     ),
 
-    h('section', { class: 'card', 'aria-labelledby': 'home-progress-title' },
-      h('h2', { id: 'home-progress-title', class: 'sr-only' }, 'Overall progress'),
-      h('p', { class: 'progress-line' }, h('strong', null, String(done)), ` of ${TOTAL_STEPS} topic steps done`),
-      progressBar(done / TOTAL_STEPS),
-      balloonStrip(state, current),
-      h('p', { class: 'muted small' }, 'Each balloon is a week. It fills a part for every topic you finish in that week (half a part per step). Week 8 has no topics, so it fills with its checklist.'),
-    ),
+    ratingCard(state, current),
 
     h('div', { class: 'grid-2' }, currentWeekCard(state, current), continueCard(state)),
 

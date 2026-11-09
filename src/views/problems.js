@@ -2,7 +2,7 @@ import { h, srOnly, externalLink, armConfirm, toast, plural } from '../ui.js';
 import { WEEKS, TOPIC_BY_ID, RESULTS, MISTAKES, DEFAULT_RESULT, DEFAULT_MISTAKE, topicsForWeek, labelFor } from '../data.js';
 import {
   addProblem, updateProblem, deleteProblem, markResolved, filterProblems, mistakePatterns,
-  defaultRevisit, isHttpUrl,
+  defaultRevisit,
 } from '../store.js';
 
 function options(list, selected) {
@@ -96,7 +96,8 @@ function problemFields(prefix, initial = {}) {
 
 function problemRow(p, onDelete) {
   const topic = TOPIC_BY_ID[p.topicId];
-  const title = p.url && isHttpUrl(p.url) ? externalLink(p.url, p.name) : p.name;
+  // Links are checked when a problem is saved or loaded, so any stored link is safe to use.
+  const title = p.url ? externalLink(p.url, p.name) : p.name;
   const resolveBtn = h('button', { type: 'button', class: 'btn btn-small', dataset: { action: 'resolve' } }, 'Re-solved it', srOnly(`: ${p.name}`));
   const editBtn = h('button', { type: 'button', class: 'btn btn-small btn-quiet', dataset: { action: 'edit' } }, 'Edit', srOnly(` ${p.name}`));
   const deleteBtn = h('button', { type: 'button', class: 'btn btn-small btn-danger', dataset: { action: 'delete' } }, 'Delete', srOnly(` ${p.name}`));

@@ -37,6 +37,12 @@ export function svg(tag, attrs, ...children) {
   return el;
 }
 
+// The down arrow on cards that open and close; CSS turns it when the card is open.
+export function chevron() {
+  return svg('svg', { class: 'chevron', viewBox: '0 0 16 16', 'aria-hidden': 'true', focusable: 'false' },
+    svg('path', { d: 'M4 6 L8 10 L12 6' }));
+}
+
 export function srOnly(text) {
   return h('span', { class: 'sr-only' }, text);
 }

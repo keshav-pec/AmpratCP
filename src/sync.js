@@ -11,13 +11,13 @@ import { merge3, deepEqual } from './merge.js';
 
 export const SYNC_STORAGE_KEY = 'balloonroom:sync';
 export const SEND_DELAY = 1500;
-export const PULL_GAP = 10000;
+const PULL_GAP = 10000;
 export const RETRY_DELAYS = [5000, 15000, 30000, 60000, 120000, 300000];
 const MAX_ROUNDS = 6;
 const KEEPALIVE_LIMIT = 60000; // browsers refuse keepalive requests over 64 KB
 const LOCAL_HOSTS = ['localhost', '127.0.0.1', '[::1]'];
 
-export class SyncError extends Error {
+class SyncError extends Error {
   constructor(code, reason = null) {
     super(code);
     this.code = code;
@@ -25,7 +25,7 @@ export class SyncError extends Error {
   }
 }
 
-export function emptyData() {
+function emptyData() {
   return syncedData(defaultState());
 }
 

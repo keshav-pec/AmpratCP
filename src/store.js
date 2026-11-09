@@ -19,8 +19,8 @@ const str = (v) => (typeof v === 'string' ? v : '');
 // Topic ids look like `c12` or `g_kmp`. Anything else (such as `__proto__`) is dropped when loading.
 const TOPIC_ID = /^[a-z][a-z0-9_]{0,39}$/i;
 
-export const THEMES = ['system', 'light', 'dark'];
-export const SIDEBAR_STATES = ['expanded', 'collapsed'];
+const THEMES = ['system', 'light', 'dark'];
+const SIDEBAR_STATES = ['expanded', 'collapsed'];
 
 function defaultPrefs() {
   return { theme: 'system', sidebar: 'expanded' };
@@ -259,9 +259,7 @@ export function totalStepsDone(state) {
   return TOPICS.reduce((n, t) => n + stepsDone(state, t.id), 0);
 }
 
-export { TOTAL_STEPS };
-
-export function nextStep(state, topicId) {
+function nextStep(state, topicId) {
   const t = state.topics[topicId] || emptyTopic();
   return STEPS.find((s) => !t[s.key]) || null;
 }
@@ -322,7 +320,7 @@ export function setWeekCheck(state, weekNumber, checkId, value) {
 }
 
 // Progress of the derived "finish both steps" item. Optional topics don't count towards it.
-export function loopProgress(state, weekNumber) {
+function loopProgress(state, weekNumber) {
   const required = topicsForWeek(weekNumber).filter((t) => !t.optional);
   const total = required.length * STEP_KEYS.length;
   const done = required.reduce((n, t) => n + stepsDone(state, t.id), 0);
@@ -358,7 +356,8 @@ export function weekStatus(state, weekNumber) {
   return 'not-started';
 }
 
-export const STATUS_LABELS = { 'not-started': 'Not started', 'in-progress': 'In progress', done: 'Done' };
+// Week statuses read like a judge's verdicts.
+export const STATUS_LABELS = { 'not-started': 'Pending', 'in-progress': 'Running', done: 'Accepted' };
 
 // 0..1, how full the week's balloon is. Each of the week's topics fills an equal part, half
 // of it per step; optional topics don't count, as they never block the week. Week 8 has no
@@ -414,7 +413,7 @@ export function validateProblem(input = {}) {
   return { ok, errors, value: ok ? value : null };
 }
 
-export function makeId(now = Date.now()) {
+function makeId(now = Date.now()) {
   const rand = Math.random().toString(36).slice(2, 8);
   return `p_${now.toString(36)}_${rand}`;
 }
@@ -482,6 +481,35 @@ export function mistakePatterns(problems) {
     .map((m, order) => ({ id: m.id, label: m.label, count: problems.filter((p) => p.mistake === m.id).length, order }))
     .sort((a, b) => (b.count - a.count) || (a.order - b.order))
     .map(({ id, label, count }) => ({ id, label, count }));
+}
+
+// ---------- rating ----------
+
+// A Codeforces-style rating earned from topic steps: 800 with nothing done, 3000 with every
+// step done. Ranks use Codeforces' names and thresholds; `color` picks the rank's color.
+export const MIN_RATING = 800;
+export const MAX_RATING = 3000;
+const RANKS = [
+  { min: 0, title: 'Newbie', color: 'gray' },
+  { min: 1200, title: 'Pupil', color: 'green' },
+  { min: 1400, title: 'Specialist', color: 'cyan' },
+  { min: 1600, title: 'Expert', color: 'blue' },
+  { min: 1900, title: 'Candidate Master', color: 'violet' },
+  { min: 2100, title: 'Master', color: 'orange' },
+  { min: 2300, title: 'International Master', color: 'orange' },
+  { min: 2400, title: 'Grandmaster', color: 'red' },
+  { min: 2600, title: 'International Grandmaster', color: 'red' },
+  { min: 3000, title: 'Legendary Grandmaster', color: 'red' },
+];
+
+export function rating(state) {
+  return MIN_RATING + Math.round(((MAX_RATING - MIN_RATING) * totalStepsDone(state)) / TOTAL_STEPS);
+}
+
+// The rank for a rating, with the next rank up (null at the top).
+export function rankFor(value) {
+  const i = RANKS.findLastIndex((r) => value >= r.min);
+  return { ...RANKS[i], next: RANKS[i + 1] || null };
 }
 
 // ---------- preferences ----------

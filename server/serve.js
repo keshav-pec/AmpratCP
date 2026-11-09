@@ -7,8 +7,7 @@ import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { extname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createSyncHandler, parseOrigins } from './sync-handler.js';
-import { storageFromEnv } from './storage.js';
+import { syncHandlerFromEnv } from './sync-handler.js';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 
@@ -41,13 +40,7 @@ export function publicFile(pathname) {
 }
 
 export function createAppServer({ env = process.env, log = console } = {}) {
-  const storage = storageFromEnv(env);
-  const sync = createSyncHandler({
-    storage,
-    syncKey: String(env.SYNC_KEY || '').trim(),
-    allowedOrigins: parseOrigins(env.ALLOWED_ORIGINS),
-    log,
-  });
+  const sync = syncHandlerFromEnv(env, { log });
 
   const server = createServer(async (req, res) => {
     const { pathname } = new URL(req.url, 'http://localhost');
@@ -58,14 +51,7 @@ export function createAppServer({ env = process.env, log = console } = {}) {
       return res.end();
     }
     const file = publicFile(pathname);
-    let body = null;
-    if (file) {
-      try {
-        body = await readFile(file);
-      } catch {
-        body = null;
-      }
-    }
+    const body = file && (await readFile(file).catch(() => null));
     if (!body) {
       res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
       return res.end('Not found');
@@ -79,7 +65,7 @@ export function createAppServer({ env = process.env, log = console } = {}) {
   });
   // Let the process exit cleanly once the server stops.
   server.on('close', () => {
-    if (storage) storage.close().catch(() => {});
+    if (sync.storage) sync.storage.close().catch(() => {});
   });
   return server;
 }
@@ -87,10 +73,10 @@ export function createAppServer({ env = process.env, log = console } = {}) {
 const runDirectly = process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 if (runDirectly) {
   const port = Number(process.env.PORT) || 8000;
-  const configured = Boolean(process.env.SYNC_KEY && (process.env.MONGODB_URI || process.env.SYNC_STORE === 'memory'));
+  const { SYNC_KEY, MONGODB_URI, SYNC_STORE } = process.env;
   createAppServer().listen(port, () => {
     console.log(`Balloon Room is running at http://localhost:${port}`);
-    if (!configured) console.log('Sync is off: set MONGODB_URI and SYNC_KEY to turn it on (see the README).');
-    else if (!process.env.MONGODB_URI) console.log('Sync is using memory storage, which forgets everything when the server stops.');
+    if (!SYNC_KEY || !(MONGODB_URI || SYNC_STORE === 'memory')) console.log('Sync is off: set MONGODB_URI and SYNC_KEY to turn it on (see the README).');
+    else if (!MONGODB_URI) console.log('Sync is using memory storage, which forgets everything when the server stops.');
   });
 }
