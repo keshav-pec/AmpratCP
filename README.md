@@ -17,12 +17,19 @@ log, and re-solving the ones marked to revisit is the revision.
 - **Plan:** the 8 weeks, each with its topics, a checklist and a status (Not started,
   In progress or Done). Every week is always open.
 - **Topics:** all 43 topics, numbered 1 to 43 in plan order (each also shows its handbook
-  chapter). Each has a one-line focus, step chips, links to the handbook and a reference,
-  visualizations in a collapsible list (interactive pages such as VisuAlgo, USFCA and Red
+  chapter). Each topic is a card that opens and closes like the weekly plan cards: closed, it
+  shows the title, a one-line focus and progress; open, it has step chips, links to the handbook
+  and a reference, visualizations in a collapsible list (interactive pages such as VisuAlgo, USFCA and Red
   Blob Games, plus videos from creators who teach the topic well, such as William Fiset,
   Reducible, Errichto and Abdul Bari), exact practice problems in a collapsible list (CSES task ids and Codeforces
-  problem codes, 304 in total), and personal notes. Search matches problem names and ids too,
-  and opens the practice list of the topics it finds.
+  problem codes, 304 in total), and personal notes (closed until you open them). Search matches
+  problem names and ids too, and opens the card and practice list of the topics it finds.
+- **Problem difficulty:** every practice problem is a small pill colored by difficulty, from
+  indigo (Easy) through light blue (Medium), yellow (Hard) and orange (Very hard) to red
+  (Extreme). CSES problems are graded by how many people solved them on cses.fi (30,000+,
+  10,000+, 3,000+, 1,000+, fewer; tripled first for tasks 3108 and up, which are newer), and
+  Codeforces problems by their rating (up to 1200, 1300 to 1600, 1700 to 2000, 2100 to 2400,
+  2500 and up). Hovering a pill shows its solve count or rating.
 - **Problem log:** problems you struggled with, what went wrong, the key idea you missed,
   and whether to revisit them. A "Mistake patterns" line counts your most common mistakes.
 
@@ -252,6 +259,7 @@ styles.css            all styles (olive, gold and beige design tokens)
 src/main.js           router and boot
 src/data.js           static content: steps, topics, weeks
 src/practice.js       exact CSES and Codeforces practice problems for each topic
+src/difficulty.js     difficulty of each practice problem (CSES solve counts, Codeforces ratings)
 src/store.js          state, pure update functions, persistence, migrate()
 src/sync.js           optional sync with your server (local-first, retries, merging)
 src/merge.js          three-way merge used by sync

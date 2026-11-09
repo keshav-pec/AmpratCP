@@ -1,6 +1,7 @@
 import { h, svg, srOnly, externalLink, plural } from '../ui.js';
 import { WEEKS, STEPS, TOPICS, TOPIC_BY_ID, topicsForWeek, handbookUrl } from '../data.js';
 import { csesUrl, codeforcesUrl } from '../practice.js';
+import { LEVELS, csesDifficulty, cfDifficulty } from '../difficulty.js';
 import { stepsDone, isTopicDone, toggleStep, setNotes, topicMatches, practiceMatches } from '../store.js';
 
 const NOTES_DELAY = 400;
@@ -13,6 +14,11 @@ const FILTERS = [
 function tick() {
   return svg('svg', { class: 'chip-tick', viewBox: '0 0 16 16', 'aria-hidden': 'true', focusable: 'false' },
     svg('path', { d: 'M3.5 8.5 L6.5 11.5 L12.5 5' }));
+}
+
+function chevron() {
+  return svg('svg', { class: 'chevron', viewBox: '0 0 16 16', 'aria-hidden': 'true', focusable: 'false' },
+    svg('path', { d: 'M4 6 L8 10 L12 6' }));
 }
 
 function referenceName(url) {
@@ -63,12 +69,32 @@ function visualsList(topic) {
   );
 }
 
-function practiceRow(site, topic, problems, toUrl) {
+// A problem link as a pill, its background colored by difficulty.
+function problemPill(url, id, name, difficulty) {
+  const { level, detail } = difficulty;
+  return h('a', {
+    class: `pill pill-${level.key}`, href: url, target: '_blank', rel: 'noopener noreferrer', title: `${level.label}: ${detail}`,
+  },
+  h('span', { class: 'pid' }, String(id)), ' ', name,
+  srOnly(` (${level.label}, ${detail}; opens in a new tab)`));
+}
+
+function practiceRow(site, topic, problems, toUrl, toDifficulty) {
   return h('div', { class: 'link-row' },
     h('span', { class: 'link-row-label', 'aria-hidden': 'true' }, site),
-    h('ul', { class: 'link-row-list', 'aria-label': `${site} practice problems for ${topic.title}` },
-      problems.map(([id, name]) => h('li', null,
-        externalLink(toUrl(id), h('span', { class: 'pid' }, String(id)), ' ', name)))),
+    h('ul', { class: 'link-row-list pill-list', 'aria-label': `${site} practice problems for ${topic.title}` },
+      problems.map(([id, name]) => h('li', null, problemPill(toUrl(id), id, name, toDifficulty(id))))),
+  );
+}
+
+function difficultyLegend() {
+  return h('div', { class: 'legend' },
+    h('span', { class: 'legend-label', id: 'difficulty-legend' }, 'Problem difficulty'),
+    h('ul', { class: 'pill-list', 'aria-labelledby': 'difficulty-legend' },
+      LEVELS.map((level) => h('li', null, h('span', {
+        class: `pill pill-${level.key}`, title: `CSES: ${level.cses}. Codeforces: ${level.cf}.`,
+      }, level.label)))),
+    h('p', { class: 'muted small legend-note' }, 'CSES problems are graded by how many people solved them, Codeforces problems by their rating. Hover a problem for its numbers.'),
   );
 }
 
@@ -78,8 +104,8 @@ function practiceProblems(topic) {
     h('summary', null, 'Practice problems',
       h('span', { class: 'summary-count' }, ` ${cses.length} CSES · ${cf.length} Codeforces`)),
     h('div', { class: 'fold-body' },
-      practiceRow('CSES', topic, cses, csesUrl),
-      practiceRow('Codeforces', topic, cf, codeforcesUrl)),
+      practiceRow('CSES', topic, cses, csesUrl, csesDifficulty),
+      practiceRow('Codeforces', topic, cf, codeforcesUrl, cfDifficulty)),
   );
 }
 
@@ -87,40 +113,58 @@ function countText(state, topicId) {
   return `${stepsDone(state, topicId)} of ${STEPS.length}`;
 }
 
+// Each topic is a card that opens and closes like the weekly plan cards. Closed, it shows the
+// title, what to focus on, and progress; open, the steps, links, practice and notes.
 function topicRow(topic, state) {
   const progress = state.topics[topic.id] || {};
   const notesId = `notes-${topic.id}`;
+  const bodyId = `topic-${topic.id}-body`;
   const textarea = h('textarea', {
     id: notesId, name: notesId, rows: '5', spellcheck: 'false', dataset: { topic: topic.id },
   });
   textarea.value = progress.notes || '';
 
+  const toggle = h('button', {
+    type: 'button', class: 'topic-toggle', 'aria-expanded': 'false', 'aria-controls': bodyId,
+  },
+  h('span', { class: 'topic-num' }, srOnly('Topic '), String(topic.number)),
+  h('span', { class: 'topic-heading' },
+    h('span', { class: 'topic-name' }, topic.title),
+    h('span', { class: 'topic-focus' }, topic.focus)),
+  h('span', { class: 'topic-meta' },
+    h('span', { class: `badge badge-${topic.priority.toLowerCase()}` }, topic.priority),
+    topic.optional ? h('span', { class: 'badge badge-optional' }, 'Optional') : null,
+    h('span', { class: 'topic-chapter' }, topic.chapter ? `Chapter ${topic.chapter}` : 'Not in the book'),
+    h('span', { class: 'topic-count' }, h('span', { class: 'js-count' }, countText(state, topic.id)), srOnly(' steps done'))),
+  chevron());
+
   return h('li', { class: `card topic${isTopicDone(state, topic.id) ? ' is-done' : ''}`, id: `topic-${topic.id}`, dataset: { topic: topic.id } },
-    h('div', { class: 'topic-head' },
-      h('span', { class: 'topic-num' }, srOnly('Topic '), String(topic.number)),
-      h('h3', { class: 'topic-title', tabindex: '-1' }, topic.title),
-      h('span', { class: 'topic-badges' },
-        h('span', { class: `badge badge-${topic.priority.toLowerCase()}` }, topic.priority),
-        topic.optional ? h('span', { class: 'badge badge-optional' }, 'Optional') : null,
-        h('span', { class: 'topic-chapter' }, topic.chapter ? `Chapter ${topic.chapter}` : 'Not in the book')),
-      h('span', { class: 'topic-count' }, h('span', { class: 'js-count' }, countText(state, topic.id)), srOnly(' steps done')),
-    ),
-    h('p', { class: 'topic-focus' }, topic.focus),
-    h('div', { class: 'chips', role: 'group', 'aria-label': `Steps for ${topic.title}` },
-      STEPS.map((step) => h('button', {
-        type: 'button', class: 'chip', 'aria-pressed': String(Boolean(progress[step.key])), dataset: { step: step.key },
-      }, tick(), step.label)),
-    ),
-    topicLinks(topic),
-    visualsList(topic),
-    practiceProblems(topic),
-    h('details', { class: 'notes', open: Boolean(progress.notes) },
-      h('summary', null, 'Notes'),
-      h('label', { for: notesId }, `Your notes on ${topic.title}`),
-      textarea,
-      h('p', { class: 'muted small' }, 'Saves automatically as you type.'),
-    ),
+    h('h3', { class: 'topic-title' }, toggle),
+    h('div', { class: 'topic-body', id: bodyId, hidden: true },
+      h('div', { class: 'chips', role: 'group', 'aria-label': `Steps for ${topic.title}` },
+        STEPS.map((step) => h('button', {
+          type: 'button', class: 'chip', 'aria-pressed': String(Boolean(progress[step.key])), dataset: { step: step.key },
+        }, tick(), step.label)),
+      ),
+      topicLinks(topic),
+      visualsList(topic),
+      practiceProblems(topic),
+      h('details', { class: 'notes' },
+        h('summary', null, 'Notes'),
+        h('label', { for: notesId }, `Your notes on ${topic.title}`),
+        textarea,
+        h('p', { class: 'muted small' }, 'Saves automatically as you type.'),
+      )),
   );
+}
+
+function setExpanded(row, expanded) {
+  row.querySelector('.topic-toggle').setAttribute('aria-expanded', String(expanded));
+  row.querySelector('.topic-body').hidden = !expanded;
+}
+
+function isExpanded(row) {
+  return row.querySelector('.topic-toggle').getAttribute('aria-expanded') === 'true';
 }
 
 function weekSection(week, state) {
@@ -142,7 +186,7 @@ function weekCountText(n, state) {
 
 export function mount(container, { store, params, restore }) {
   const state = store.get();
-  // After a re-draw, the same filter and the same open notes come back.
+  // After a re-draw, the same filter, the same open cards and the same open notes come back.
   const filter = { show: restore ? restore.show : 'all', query: '' };
   const pendingNotes = new Map();
 
@@ -159,6 +203,7 @@ export function mount(container, { store, params, restore }) {
     h('header', { class: 'page-head' },
       h('h1', { tabindex: '-1' }, 'Topics'),
       h('p', { class: 'lede' }, `${TOPICS.length} topics in plan order. For each one: read and visualize it, then code it from memory and solve its practice problems. Problems that gave you trouble go in the problem log for revision. Optional topics can wait until the core ones feel solid.`),
+      difficultyLegend(),
     ),
     h('div', { class: 'filters card' },
       h('div', { class: 'field field-show' },
@@ -179,7 +224,7 @@ export function mount(container, { store, params, restore }) {
         const topic = TOPIC_BY_ID[row.dataset.topic];
         const match = topicMatches(store.get(), topic, filter);
         row.hidden = !match;
-        showMatchingProblems(row.querySelector('.practice'), match && practiceMatches(topic, filter.query));
+        showMatchingProblems(row, match && practiceMatches(topic, filter.query));
         if (match) visible += 1;
       }
       section.hidden = visible === 0;
@@ -189,13 +234,26 @@ export function mount(container, { store, params, restore }) {
     status.textContent = shown === TOPICS.length ? `Showing all ${TOPICS.length} topics` : `Showing ${plural(shown, 'topic')} of ${TOPICS.length}`;
   }
 
-  // A search that matches a problem opens that topic's practice list, and closes it again
-  // once the search no longer matches, unless it was open already.
-  function showMatchingProblems(details, matches) {
-    if (matches && !details.open) {
-      details.open = true;
-      details.dataset.searchOpened = '';
-    } else if (!matches && 'searchOpened' in details.dataset) {
+  // A search that matches a problem opens that topic's card and practice list, and closes each
+  // again once the search no longer matches, unless it was open already.
+  function showMatchingProblems(row, matches) {
+    const details = row.querySelector('.practice');
+    if (matches) {
+      if (!isExpanded(row)) {
+        setExpanded(row, true);
+        row.dataset.searchOpened = '';
+      }
+      if (!details.open) {
+        details.open = true;
+        details.dataset.searchOpened = '';
+      }
+      return;
+    }
+    if ('searchOpened' in row.dataset) {
+      setExpanded(row, false);
+      delete row.dataset.searchOpened;
+    }
+    if ('searchOpened' in details.dataset) {
       details.open = false;
       delete details.dataset.searchOpened;
     }
@@ -224,6 +282,14 @@ export function mount(container, { store, params, restore }) {
   }
 
   function onClick(event) {
+    const toggle = event.target.closest('.topic-toggle');
+    if (toggle) {
+      const row = toggle.closest('.topic');
+      setExpanded(row, !isExpanded(row));
+      // Opened or closed by hand now, so a search shouldn't close it later.
+      delete row.dataset.searchOpened;
+      return;
+    }
     const chip = event.target.closest('button.chip');
     if (!chip) return;
     if (chip.dataset.filter) {
@@ -261,6 +327,9 @@ export function mount(container, { store, params, restore }) {
   container.addEventListener('focusout', onFocusOut);
 
   if (restore) {
+    for (const row of sections.querySelectorAll('.topic')) {
+      setExpanded(row, restore.openTopics.includes(row.dataset.topic));
+    }
     for (const details of sections.querySelectorAll('.notes')) {
       details.open = restore.openNotes.includes(details.closest('.topic').dataset.topic);
     }
@@ -277,14 +346,17 @@ export function mount(container, { store, params, restore }) {
   if (target && TOPIC_BY_ID[target]) {
     const row = sections.querySelector(`#topic-${target}`);
     row.classList.add('is-target');
-    row.querySelector('.topic-title').setAttribute('data-autofocus', '');
+    // On a re-draw the card keeps whatever state the reader left it in.
+    if (!restore) setExpanded(row, true);
+    row.querySelector('.topic-toggle').setAttribute('data-autofocus', '');
   }
 
   return {
     flush,
     snapshot() {
       const openIn = (selector) => [...sections.querySelectorAll(`${selector}[open]`)].map((d) => d.closest('.topic').dataset.topic);
-      return { show: filter.show, openNotes: openIn('.notes'), openPractice: openIn('.practice'), openVisuals: openIn('.visuals') };
+      const openTopics = [...sections.querySelectorAll('.topic-toggle[aria-expanded="true"]')].map((t) => t.closest('.topic').dataset.topic);
+      return { show: filter.show, openTopics, openNotes: openIn('.notes'), openPractice: openIn('.practice'), openVisuals: openIn('.visuals') };
     },
     unmount() {
       flush();
